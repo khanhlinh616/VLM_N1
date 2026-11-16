@@ -1,0 +1,27 @@
+# Common ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+.env
+*.env
+*.txt
+*.log
+*.cache
+*.DS_Store
+*.idea/
+*.vscode/
+*.ipynb_checkpoints/
+.venv/
+venv/
+env/
+virtualenv/
+# Data and model artifacts (skip large files)
+data/*
+results/*
+checkpoints/*
+figures/*
