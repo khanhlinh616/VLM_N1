@@ -1,0 +1,5 @@
+Nhóm tác vụ,Số mẫu,Đúng,Độ chính xác (%),Dạng lỗi phổ biến
+1. Mô tả ảnh & VQA,5,5,100.0,Không có lỗi
+2. Đọc tài liệu (DocVQA),5,4,80.0,Chữ số bị mờ ở biên ảnh
+3. Toán hình học & Biểu đồ,5,3,60.0,Sai ở phép tính trừ đa bước
+4. Kiểm tra bẫy ảo giác,5,3,60.0,Đoán mò vật thể theo thói quen

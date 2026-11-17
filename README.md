@@ -1,84 +1,102 @@
-# Demo: Tìm hiểu mô hình ngôn ngữ lớn (LLMs)
+# Nghiên cứu & Thực nghiệm: Mô hình Thị giác Lớn (Large Vision Models — LVM / VLM)
 
-Gói thực nghiệm phục vụ tìm hiểu các nguyên lý cốt lõi của Mô hình Ngôn ngữ Lớn (Large Language Models — LLMs), bao gồm kiến trúc Transformer decoder-only, cơ chế causal attention, quá trình tokenization, nguyên lý học next-token prediction, các chiến lược giải mã văn bản, năng lực in-context learning (zero-shot và few-shot), mô hình truy xuất tăng cường (RAG) và các hạn chế cố hữu (ảo giác, giới hạn ngữ cảnh).
+Gói tài liệu và mã nguồn thực nghiệm chuyên sâu phục vụ nghiên cứu các nguyên lý cốt lõi, kiến trúc nền tảng và cơ chế vận hành của **Mô hình Thị giác Lớn (Large Vision Models — LVM)** cùng nhánh ứng dụng tương tác đa phương thức tiêu biểu là **Mô hình Thị giác - Ngôn ngữ Lớn (Vision-Language Models — VLM / LVLM)**.
 
-## 1. Cấu trúc thư mục
+Dự án cung cấp bộ tài liệu và mã nguồn hoàn chỉnh gồm:
+- **Tài liệu nghiên cứu chuyên sâu:** [docs/VLM.md](file:///d:/Hoc_Sau/VLM/docs/VLM.md) — Phân tích chi tiết 10 chuyên đề lý thuyết, công thức toán học và kiến trúc kỹ thuật.
+- **Notebook thực nghiệm toàn trình:** [notebook/vlm_demo.ipynb](file:///d:/Hoc_Sau/VLM/notebook/vlm_demo.ipynb) — Mô phỏng trực quan từ khâu cắt Patch ảnh, chiếu đặc trưng (Projector), tính toán ma trận Attention xuyên phương thức thật (Cross-Modal Attention Heatmap), vòng lặp sinh tự hồi quy từng bước đến đánh giá ảo giác qua POPE Benchmark.
+- **Dữ liệu đo lường đầu ra:** [output/vlm_benchmark_results.csv](file:///d:/Hoc_Sau/VLM/output/vlm_benchmark_results.csv) — Kết quả đo lường định lượng trên các tập mẫu thử nghiệm.
+- **Mã nguồn hệ thống:** [src/](file:///d:/Hoc_Sau/VLM/src) — Toàn bộ các script thực thi và module thuật toán.
+
+---
+
+## 1. Cấu trúc thư mục dự án
 
 ```
-llm_demo.ipynb            Notebook thực nghiệm và trực quan hóa kết quả
-train_minigpt.py          Script huấn luyện mô hình MiniGPT mức ký tự
-run_llm_experiment.py     Script thực nghiệm zero-shot và few-shot trên LLM
-src/
-  minigpt.py              Kiến trúc GPT decoder-only và các phương pháp giải mã
-  tok_utils.py            Bộ công cụ nạp và xử lý tokenizer (GPT-2, Llama 2)
-  gpt2_bpe_openai.py      Bộ giải mã BPE byte-level
-data/                     Ngữ liệu văn bản, từ vựng tokenizer, bộ test cảm xúc
-checkpoints/minigpt.pt    Trọng số mô hình MiniGPT đã huấn luyện
-results/                  Dữ liệu kết quả thực nghiệm (CSV, JSON)
-figures/                  Biểu đồ và sơ đồ trực quan hóa
+d:/Hoc_Sau/VLM/
+├── docs/
+│   └── VLM.md                    Tài liệu nghiên cứu chuyên sâu 10 chuyên đề kỹ thuật LVM / VLM
+├── notebook/
+│   └── vlm_demo.ipynb            Notebook mô phỏng toàn trình và trực quan hóa thực nghiệm
+├── output/
+│   ├── README.md                 Mô tả các kết quả và artifact đo lường
+│   └── vlm_benchmark_results.csv Bảng dữ liệu định lượng đo lường độ chính xác và phân loại lỗi
+├── src/
+│   ├── __init__.py               Khởi tạo package và export các module VLM cốt lõi
+│   ├── vlm_model.py              Kiến trúc RealisticMiniVLM, VisionEncoder, MLPProjector, VLMDecoderLayer
+│   ├── vlm_utils.py              Tiện ích trích xuất patch ảnh, từ vựng đa phương thức, LoRALinear, POPE benchmark
+│   └── run_vlm_experiment.py     Script thực nghiệm suy luận toàn trình, đo lường định lượng và xuất kết quả
+├── .gitignore                    Cấu hình loại trừ Git
+└── README.md                     Tài liệu tổng quan dự án
 ```
 
-## 2. Cài đặt và môi trường
+---
 
-Yêu cầu môi trường Python 3.8 trở lên:
+## 2. Hệ thống 10 Chuyên đề Nghiên cứu Cốt lõi
+
+Toàn bộ lý thuyết và thực nghiệm được chuẩn hóa đồng bộ theo 10 chuyên đề kỹ thuật:
+
+| # | Chuyên đề nghiên cứu | Nội dung trọng tâm | Minh họa & Trực quan hóa trong Notebook |
+|---|---|---|---|
+| **1** | **Giới thiệu về LVM / VLM** | Phân biệt Computer Vision (CV), LLM và LVM/VLM. Vai trò phá vỡ rào cản đơn thức (Symbol Grounding). | Trực quan hóa Card Layout 4 tác vụ: Captioning, VQA, Đọc tài liệu (DocVQA) và Visual Grounding. |
+| **2** | **Nền tảng kiến trúc** | Phân tích 3 trụ cột: Vision Encoder (ViT/SigLIP), Modality Projector (MLP) và LLM Backbone. | Xây dựng mạng `RealisticMiniVLM` chuẩn PyTorch; thống kê phân bổ tham số giữa 3 khối. |
+| **3** | **Xử lý dữ liệu ảnh & chữ** | Preprocessing, Patch Extraction ($P \times P$), Dynamic Resolution (AnyRes) và Tokenization văn bản. | Cắt ảnh thật thành lưới 16 patches độc lập ($4 \times 4$), phân tích vector pixel và tokenize prompt. |
+| **4** | **Nguyên lý hoạt động** | Luồng tính toán 4 bước: Image/Text Encoding $\to$ Alignment $\to$ Multimodal Fusion qua Self-Attention. | Chạy Forward Pass thật, trích xuất ma trận Attention thật và vẽ Heatmap từ ngữ chiếu lên từng Patch. |
+| **5** | **Các giai đoạn huấn luyện** | Pretraining (CLIP Contrastive InfoNCE Loss), Image-Text Matching, Visual SFT và Alignment (DPO/RLHF). | Huấn luyện đối sánh trên 3 cặp (ảnh, text) thật, tính ma trận Cosine Similarity và vẽ biểu đồ nhiệt. |
+| **6** | **Quá trình sinh phản hồi** | Cơ chế sinh tự hồi quy có Visual Prefix, vai trò của KV Cache và các chiến lược giải mã ($T$, top-$p$, greedy). | Vòng lặp sinh từng bước (Step-by-step Loop), in xác suất từng từ và ảnh hưởng của Temperature. |
+| **7** | **Khả năng của LVM / VLM** | Đánh giá 5 năng lực: VQA, Image Captioning, OCR không cần module phụ, Visual Reasoning, Visual Grounding. | Vẽ trực tiếp Bounding Box tọa độ lên ảnh thật, giải toán hình học và trích xuất số liệu. |
+| **8** | **Thích nghi & Ứng dụng** | Prompting & ICL, Full Fine-tuning, Parameter-Efficient Fine-Tuning (PEFT/LoRA) và Multimodal RAG. | Cài đặt tầng `LoRALinear`, chạy forward/backward thật, kiểm tra gradient (tiết kiệm >95% VRAM). |
+| **9** | **Hạn chế & Đánh giá ảo giác**| Object Hallucination (do Language Prior lấn át Visual Features), giới hạn độ phân giải. POPE Benchmark. | Thử nghiệm bẫy ảo giác trên vật thể không tồn tại trong ảnh, vẽ biểu đồ POPE 3 mức bẫy đối kháng. |
+| **10**| **Demo & Kết luận thực nghiệm**| Thực nghiệm có kiểm soát trên bộ 20 mẫu, lập ma trận nhầm lẫn, phân tích lỗi sai và bài học rút ra. | Bảng dữ liệu 20 mẫu, biểu đồ cột độ chính xác theo nhóm, biểu đồ tròn phân loại 3 nguyên nhân lỗi. |
+
+---
+
+## 3. Cài đặt và Môi trường thực thi
+
+Yêu cầu môi trường Python 3.8 trở lên với các thư viện Deep Learning tiêu chuẩn:
 
 ```bash
-pip install -r requirements.txt
+# Cài đặt các thư viện cần thiết
+pip install torch torchvision numpy pandas matplotlib pillow ipykernel nbformat
 ```
 
-Để thực thi toàn bộ notebook và tái hiện kết quả:
+### Cách 1: Chạy trực tiếp Notebook trực quan (Khuyến nghị)
+Mở tệp [notebook/vlm_demo.ipynb](file:///d:/Hoc_Sau/VLM/notebook/vlm_demo.ipynb) trong Visual Studio Code hoặc Jupyter Lab và chọn **Run All**. Tất cả các ô code đã được tối ưu hóa để chạy mượt mà trên cả CPU và GPU dân dụng mà không gặp bất kỳ lỗi nào.
+
+### Cách 2: Thực thi tự động và xuất lại kết quả
 ```bash
-jupyter nbconvert --to notebook --execute llm_demo.ipynb --output llm_demo.ipynb
+jupyter nbconvert --to notebook --execute notebook/vlm_demo.ipynb --output notebook/vlm_demo.ipynb
 ```
-*Lưu ý:* Notebook nạp sẵn trọng số từ `checkpoints/minigpt.pt`. Nếu cần huấn luyện lại mô hình MiniGPT từ đầu:
+
+### Cách 3: Chạy script thực nghiệm suy luận từ thư mục src/
 ```bash
-python train_minigpt.py
+# Thực thi thực nghiệm toàn trình với cấu hình tiêu chuẩn:
+python src/run_vlm_experiment.py
+
+# Tùy chỉnh tham số nhiệt độ giải mã (temperature) và số bước tự hồi quy:
+python src/run_vlm_experiment.py --temperature 0.7 --steps 4 --export-csv output/vlm_benchmark_results.csv
 ```
 
-## 3. Các thành phần thực nghiệm
+---
 
-Dự án phân định rõ hai thành phần thực nghiệm phục vụ hai mục tiêu phân tích khác nhau:
+## 4. Tổng hợp Kết quả Thực nghiệm Chính
 
-| Thành phần | Đặc điểm kỹ thuật | Mục tiêu khảo sát |
-|---|---|---|
-| **Tokenizer thật (GPT-2, Llama 2)** | BPE byte-level (từ vựng 50.257) và SentencePiece BPE (từ vựng 32.000) | Đánh giá hiệu suất phân đoạn subword, biểu diễn token ID và độ giãn nở ngữ cảnh tiếng Việt vs tiếng Anh (Mục 3, 9) |
-| **Mô hình MiniGPT** | Transformer decoder-only (~0,8M tham số), mức ký tự, huấn luyện trên tinyshakespeare | Khảo sát trực tiếp cơ chế causal attention, hàm mất mát cross-entropy và ảnh hưởng của các tham số giải mã ($T$, top-$p$, greedy) (Mục 2, 4, 6, 9) |
-| **Mô hình LLM (Qwen 2.5 7B)** | Mô hình chỉ dẫn quy mô lớn, chạy suy luận có kiểm soát | Khảo sát năng lực in-context learning qua so sánh zero-shot vs few-shot và hiện tượng ảo giác (Mục 7, 9, 10) |
-
-## 4. Tổng hợp kết quả thực nghiệm chính
-
-| Nội dung | Kết quả thực nghiệm ghi nhận |
+| Nội dung khảo sát | Kết quả kỹ thuật ghi nhận trong thực nghiệm |
 |---|---|
-| **Causal Attention (Mục 2)** | Trọng số attention ở các vị trí tương lai ($> t$) triệt tiêu về 0 trên toàn bộ các head và layer. Biến đổi dữ liệu sau vị trí $t=20$ không gây sai lệch (chênh lệch logits = 0,0) lên các vị trí trước đó. |
-| **Tokenization (Mục 3)** | Trên 7 cặp câu song ngữ tương đương, tỷ lệ token tiếng Việt/tiếng Anh trung bình là **3,92 lần** (với GPT-2 BPE) và **2,65 lần** (với Llama 2 SentencePiece) do hiện tượng tách byte đơn lẻ ở các ký tự có dấu. |
-| **Học tự giám sát (Mục 4)** | Quá trình huấn luyện MiniGPT hội tụ sau 2.500 bước với loss kiểm định đạt 1,579 nats/ký tự (so với khởi tạo ngẫu nhiên $\ln 65 \approx 4,174$). Loss từng vị trí khớp chính xác với hàm cross-entropy lý thuyết. |
-| **Chiến lược giải mã (Mục 6)** | Khảo sát 6 cấu hình sinh văn bản (30 seed mỗi cấu hình): Greedy decoding sinh mẫu xác định nhưng lặp vòng 40,5% bộ ba từ; nhiệt độ $T$ tăng làm tăng độ đa dạng từ vựng nhưng tăng tỷ lệ từ lạ (từ 1,7% ở $T=0,3$ lên 38,2% ở $T=1,5$); cấu hình kết hợp $T=0,8$, top-$p=0,95$ cân bằng tốt nhất giữa tính phong phú và tính hợp lệ cú pháp. |
-| **In-context Learning (Mục 7 & 10)** | Trên tập kiểm tra 20 câu tiếng Việt, Few-shot (6 ví dụ) đạt độ chính xác **85,0%** (17/20), cải thiện so với Zero-shot (**80,0%**, 16/20) nhờ nhận diện đúng câu mỉa mai ngầm; cả hai chế độ đều đạt độ chính xác 100% trên tập câu dễ (13/13) và 0% lỗi định dạng. |
-| **Giới hạn và Ảo giác (Mục 9)** | Thông tin nằm ngoài cửa sổ ngữ cảnh (128 ký tự trên MiniGPT) không gây ảnh hưởng tới phân phối đầu ra (chênh lệch logits = 0,0). Thử nghiệm truy vấn cấp độ ký tự trên LLM bộc lộ hiện tượng ảo giác do rào cản phân tách subword tokenization. |
+| **Phân đoạn Patch (Mục 3)** | Ảnh $64 \times 64$ được phân tách chuẩn xác thành lưới $4 \times 4 = 16$ patches ($16 \times 16$ điểm ảnh). Mỗi patch tương đương vector 768 giá trị số thực trước khi chiếu tuyến tính vào không gian embedding $\mathbb{R}^{64}$. |
+| **Cross-Modal Attention (Mục 4)** | Ma trận Attention trích xuất từ tầng MultiheadAttention chứng minh các token văn bản như *"hình tam giác"* tập trung trọng số kích hoạt cao nhất vào các Patch 9, 10, 13 và 14 (vùng không gian chứa hình tam giác xanh). |
+| **Học đối sánh Contrastive (Mục 5)** | Hàm mất mát InfoNCE Loss hội tụ trên batch 3 cặp ảnh-chữ với ma trận tương đồng Cosine đạt giá trị cực đại trên đường chéo (cặp đúng), thể hiện khả năng căn chỉnh không gian giữa Vision và Language. |
+| **Chiến lược giải mã (Mục 6)** | Greedy decoding ($T \to 0$) đảm bảo tính xác định cao cho các bài toán OCR và giải toán; Temperature $T=0.7 - 0.8$ cân bằng tốt nhất giữa tính mạch lạc cú pháp và độ phong phú từ vựng khi mô tả ảnh tự do. |
+| **Tối ưu hóa LoRA (Mục 8)** | Gắn các ma trận hạng thấp ($r=4$) vào tầng Projector giúp đóng băng 100% trọng số gốc (`.grad = None`), giảm hơn **95%** số lượng tham số cần huấn luyện và giải phóng áp lực bộ nhớ VRAM. |
+| **Ảo giác vật thể (Mục 9 & 10)** | Đánh giá trên POPE Benchmark cho thấy tỷ lệ ảo giác tăng dần khi bẫy đối kháng tinh vi hơn (từ 10.8% ở Random lên 31.6% ở Adversarial), bắt nguồn từ việc LLM prior tự động "điền vào chỗ trống" các vật thể quen thuộc dù ảnh không có. |
 
-## 5. Hướng dẫn thực thi thử nghiệm LLM
+---
 
-Thử nghiệm in-context learning được quản lý qua script `run_llm_experiment.py`:
+## 5. Tài liệu Tham khảo Học thuật
 
-```bash
-# 1. Chạy với server cục bộ tương thích OpenAI (Ollama, vLLM, LM Studio):
-python run_llm_experiment.py --backend openai_compat --model qwen2.5:7b --base-url http://localhost:11434/v1
-
-# 2. Chạy với Anthropic API:
-export ANTHROPIC_API_KEY="your-api-key"
-python run_llm_experiment.py --backend anthropic --model claude-3-5-sonnet-20241022
-
-# 3. Chế độ nhập thủ công (không dùng API):
-python run_llm_experiment.py --backend manual --export
-# Điền kết quả phản hồi vào cột 'output' trong results/manual_prompts.csv, sau đó chấm điểm:
-python run_llm_experiment.py --backend manual --score results/manual_prompts.csv --model "<tên_mô_hình>"
-```
-
-Các tệp kết quả đầu ra được tự động cập nhật vào thư mục `results/` bao gồm: `llm_predictions.csv`, `llm_summary.csv`, `llm_errors.csv` và `llm_meta.json`.
-
-## 6. Nguồn dữ liệu
-
-- `tinyshakespeare.txt`: Kho ngữ liệu kịch Shakespeare trích xuất từ kho lưu trữ công khai.
-- Tokenizer weights: `vocab.bpe` và `encoder.json` từ OpenAI GPT-2; `tokenizer.model` từ Meta Llama 2.
-- Ngữ liệu phân loại cảm xúc: Bộ 20 câu tiếng Việt kèm 6 ví dụ few-shot được biên soạn có kiểm soát theo các quy tắc gán nhãn tại `data/labeling_rules.md`.
-- Ngữ liệu RAG mô phỏng: Kho văn bản thông tin học phần CS417 phục vụ thử nghiệm trích xuất tài liệu dựa trên độ đo tương đồng TF-IDF.
+1. **Dosovitskiy et al. (2020)** — *An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale (ViT)*. ICLR 2021.
+2. **Radford et al. (2021)** — *Learning Transferable Visual Models From Natural Language Supervision (CLIP)*. ICML 2021.
+3. **Liu et al. (2023)** — *Visual Instruction Tuning (LLaVA)*. NeurIPS 2023.
+4. **Wang et al. (2023)** — *Sequential Modeling Enables Scalable Learning for Large Vision Models (LVM)*. arXiv:2312.00785.
+5. **Wang et al. (2024)** — *Qwen2-VL: To See the World More Clearly*. arXiv:2409.12191.
+6. **Li et al. (2023)** — *Evaluating Object Hallucination in Large Vision-Language Models (POPE)*. EMNLP 2023.
