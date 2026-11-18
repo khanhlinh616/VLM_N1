@@ -21,7 +21,10 @@ venv/
 env/
 virtualenv/
 # Data and model artifacts (skip large files)
-data/*
+*.pt
+*.bin
+*.onnx
+*.safetensors
 results/*
 checkpoints/*
 figures/*
