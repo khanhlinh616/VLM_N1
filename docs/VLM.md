@@ -66,7 +66,7 @@ Thế giới con người vận hành dựa trên đa giác quan. Sự ra đời
 - **Prompt câu hỏi:**
   > *"Mô tả tổng quan bố cục và các vật thể trong bức ảnh."*
 - **Phản hồi của VLM:**
-  > *"Ảnh gồm hình tròn đỏ ở góc trên phải, tam giác xanh lá ở góc dưới trái và chữ nhật vàng ở góc dưới phải trên nền xám nhạt."*
+  > *"Ảnh gồm hình tròn đỏ ở góc trên phải, tam giác xanh lá ở góc dưới trái và hình vuông vàng ở góc dưới phải trên nền xám nhạt."*
 - **Phân tích kỹ thuật & Đánh giá:**
   - Mô hình tiếp nhận toàn bộ các visual tokens và tự động tổng hợp thông tin không gian.
   - Nhận diện đầy đủ 3 thực thể cùng thuộc tính màu sắc và vị trí tương đối mà không cần câu hỏi gợi ý.
@@ -81,7 +81,7 @@ Thế giới con người vận hành dựa trên đa giác quan. Sự ra đời
 - **Phản hồi của VLM:**
   > *"Hình tam giác có màu xanh lá cây và nằm ở góc dưới bên trái của ảnh."*
 - **Phân tích kỹ thuật & Đánh giá:**
-  - Mô hình kích hoạt cơ chế Cross-Modal Attention: token `"tam giác"` trong prompt tập trung trọng số kích hoạt cao nhất vào các Patch 9, 10, 13 và 14 (nơi chứa điểm ảnh màu xanh lá).
+  - Mô hình kích hoạt cơ chế Cross-Modal Attention: token `"tam giác"` trong prompt tập trung trọng số kích hoạt vào các Patch thuộc vùng tam giác (#5, #8, #9, #10, #12, #13, #14), với đỉnh điểm trọng số lớn nhất ở Patch #9 (thân tam giác).
   - Trả lời đúng trọng tâm câu hỏi truy vấn thuộc tính (màu sắc) và vị trí không gian.
 
 #### 1.2.3 Tác vụ 3: OCR & Document Understanding (Đọc hiểu tài liệu & Hóa đơn)
@@ -222,9 +222,10 @@ Từ ảnh điểm ảnh gốc $X \in \mathbb{R}^{3 \times 64 \times 64}$, mô h
 
 ##### 2. Trực quan hóa Lưới 16 Patches (4x4) Tách rời từ Ảnh Thực nghiệm 64x64
 Lưới 16 mẩu ảnh độc lập được trích xuất từ ảnh mẫu:
-- **Viền đỏ (Patch #2, #3):** Vùng không gian chứa hình tròn màu đỏ.
-- **Viền xanh lá (Patch #9, #10, #13, #14):** Vùng không gian chứa hình tam giác màu xanh lá.
-- **Các patch còn lại:** Vùng nền xám nhạt và chữ nhật màu vàng.
+- **Viền đỏ (Patch #2, #3, #6, #7):** Vùng không gian chứa hình tròn màu đỏ.
+- **Viền xanh lá (Patch #5, #8, #9, #10, #12, #13, #14):** Vùng không gian chứa hình tam giác màu xanh lá (Patch #10 và #14 giao thoa với hình vuông vàng).
+- **Viền cam (Patch #11, #15):** Vùng không gian chứa hình vuông màu vàng.
+- **Viền xám (Patch #0, #1, #4):** Vùng nền xám nhạt hoàn toàn trống.
 
 ![Lưới 16 Patches viền màu trực quan](../data/patches_grid_illustration.png)
 
@@ -254,8 +255,10 @@ Giả sử có bức ảnh kích thước $336 \times 336$ pixel, kích thước
 
 2. **Trường hợp mô hình thực nghiệm (64x64 trong thư mục `data/`):**
 Ảnh $64 \times 64$ với kích thước patch $P = 16 \times 16$ được phân tách thành lưới $4 \times 4 = 16$ patches độc lập:
-- Patch #2, #3: Vùng chứa hình tròn màu đỏ.
-- Patch #9, #10, #13, #14: Vùng chứa hình tam giác màu xanh lá.
+- Patch #2, #3, #6, #7: Vùng chứa hình tròn màu đỏ.
+- Patch #5, #8, #9, #10, #12, #13, #14: Vùng chứa hình tam giác màu xanh lá.
+- Patch #10, #11, #14, #15: Vùng chứa hình vuông màu vàng.
+- Patch #0, #1, #4: Vùng nền xám nhạt hoàn toàn trống.
 - Mỗi patch $16 \times 16 \times 3 = 768$ giá trị pixel được chiếu tuyến tính về vector nhúng chiều 64 ($\mathbb{R}^{64}$) trước khi ghép nối vào LLM.
 
 #### b. Minh họa Tokenize câu văn bản Prompt

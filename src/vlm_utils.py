@@ -45,19 +45,23 @@ def create_sample_image(size: int = 64) -> Tuple[Image.Image, torch.Tensor]:
     """Tạo ảnh mẫu có kiểm soát 64x64 và Tensor PyTorch chuẩn hóa [1, 3, H, W].
     
     Cấu trúc không gian:
-    - Nền: xám nhạt (245, 245, 248)
-    - Vật thể 1: Hình tròn màu đỏ ở góc trên bên phải (x: 40..56, y: 8..24)
-    - Vật thể 2: Hình tam giác màu xanh lá ở góc dưới bên trái (x: 8..40, y: 28..56)
-    - Ký tự chữ: 'VLM'
+    - Nền: xám nhạt (245, 246, 250)
+    - Vật thể 1: Hình tròn màu đỏ ở góc trên bên phải (x: 40..56, y: 8..24) -> Patch #2, #3, #6, #7
+    - Vật thể 2: Hình tam giác màu xanh lá ở góc dưới bên trái (đỉnh (24, 28), đáy trái (8, 56), đáy phải (40, 56)) -> Patch #5, #8, #9, #10, #12, #13, #14
+    - Vật thể 3: Hình vuông màu vàng ở góc dưới bên phải (x: 44..60, y: 36..52, kích thước 16x16) -> Patch #10, #11, #14, #15
+    - Nền trống: Patch #0, #1, #4
     """
-    img = Image.new("RGB", (size, size), color=(245, 245, 248))
+    img = Image.new("RGB", (size, size), color=(245, 246, 250))
     draw = ImageDraw.Draw(img)
     
     # 1. Hình tròn đỏ (Góc trên bên phải)
-    draw.ellipse([40, 8, 56, 24], fill=(220, 20, 60))
+    draw.ellipse([40, 8, 56, 24], fill=(220, 38, 38), outline=(153, 27, 27))
     
     # 2. Hình tam giác xanh lá (Góc dưới bên trái)
-    draw.polygon([(8, 56), (40, 56), (24, 28)], fill=(34, 139, 34))
+    draw.polygon([(8, 56), (40, 56), (24, 28)], fill=(22, 163, 74), outline=(20, 83, 45))
+    
+    # 3. Hình vuông vàng (Góc dưới bên phải, kích thước 16x16)
+    draw.rectangle([44, 36, 60, 52], fill=(234, 179, 8), outline=(161, 98, 7))
     
     # Chuyển đổi sang Tensor chuẩn hóa [1, 3, H, W] trong đoạn [0, 1]
     tensor_arr = np.array(img, dtype=np.float32) / 255.0

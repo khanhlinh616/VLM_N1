@@ -71,8 +71,10 @@ def run_experiment(temperature: float = 0.7, max_steps: int = 4, export_csv: str
     print(f"  + Tensor đầu vào chuẩn hóa : {list(img_tensor.shape)} [Batch=1, C=3, H=64, W=64]")
     print(f"  + Kích thước mỗi Patch     : 16x16 điểm ảnh (16x16x3 = 768 giá trị số thực)")
     print(f"  + Tổng số lượng Patches    : {len(patches)} patches độc lập xếp thành lưới 4x4")
-    print(f"    - Patch 2..3   : Vùng không gian chứa hình tròn màu đỏ (góc trên bên phải)")
-    print(f"    - Patch 9..14  : Vùng không gian chứa hình tam giác màu xanh lá (góc dưới bên trái)")
+    print(f"    - Patch #2, #3, #6, #7             : Vùng không gian chứa hình tròn màu đỏ (góc trên bên phải)")
+    print(f"    - Patch #5, #8, #9, #10, #12..#14  : Vùng không gian chứa hình tam giác màu xanh lá (góc dưới bên trái)")
+    print(f"    - Patch #10, #11, #14, #15         : Vùng không gian chứa hình vuông vàng (góc dưới bên phải)")
+    print(f"    - Patch #0, #1, #4                 : Vùng nền xám nhạt hoàn toàn trống")
 
     # -------------------------------------------------------------------------
     # 3. FORWARD PASS ĐA PHƯƠNG THỨC & CROSS-MODAL ATTENTION
@@ -102,9 +104,9 @@ def run_experiment(temperature: float = 0.7, max_steps: int = 4, export_csv: str
     print("\n[GIAI ĐOẠN 4] Chạy vòng lặp sinh tự hồi quy (Autoregressive Generation) trên 4 tác vụ:")
     tasks = [
         ("1. VQA Thuộc tính", "hình tam giác màu gì ?", "hình tam giác màu xanh lá"),
-        ("2. Đếm số lượng", "đếm có bao nhiêu hình ?", "có 2 hình trong ảnh"),
+        ("2. Đếm số lượng", "đếm có bao nhiêu hình ?", "có 3 hình trong ảnh"),
         ("3. Định vị tọa độ", "hình tròn ở đâu ?", "hình tròn ở góc trên bên phải"),
-        ("4. Mô tả tổng thể", "mô tả ảnh này", "ảnh có hình tròn đỏ và tam giác xanh")
+        ("4. Mô tả tổng thể", "mô tả ảnh này", "ảnh có hình tròn tam giác và hình vuông")
     ]
     
     print("-" * 80)

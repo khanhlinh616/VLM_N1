@@ -61,12 +61,67 @@ def test_realistic_mini_vlm_forward():
 
 
 def test_extract_patches():
-    """Kiểm thử hàm phân đoạn ảnh thành 16 patches 16x16 từ ảnh 64x64."""
+    """Kiểm thử hàm phân đoạn ảnh thành 16 patches 16x16 từ ảnh 64x64 và kiểm tra vị trí vật thể."""
     pil_img, _ = create_sample_image(size=64)
     patches = extract_patches(pil_img, patch_size=16)
     assert len(patches) == 16, f"Số patches phải là 16, thực tế: {len(patches)}"
     for idx, patch_img, box in patches:
         assert patch_img.size == (16, 16), f"Kích thước patch #{idx} không phải 16x16: {patch_img.size}"
+
+    # Kiểm tra phân bố chính xác các patch chứa từng thực thể hình học
+    import numpy as np
+    circle_patches = []
+    triangle_patches = []
+    square_patches = []
+    empty_patches = []
+
+    for idx, patch_img, _ in patches:
+        arr = np.array(patch_img)
+        # Hình tròn đỏ: R > 180, G < 100, B < 100
+        has_circle = np.any((arr[:, :, 0] > 180) & (arr[:, :, 1] < 100) & (arr[:, :, 2] < 100))
+        # Hình tam giác xanh lá: G > 120, R < 100, B < 100
+        has_triangle = np.any((arr[:, :, 1] > 120) & (arr[:, :, 0] < 100) & (arr[:, :, 2] < 100))
+        # Hình vuông vàng: R > 150, G > 90, B < 50
+        has_square = np.any((arr[:, :, 0] > 150) & (arr[:, :, 1] > 90) & (arr[:, :, 2] < 50))
+
+        if has_circle:
+            circle_patches.append(idx)
+        if has_triangle:
+            triangle_patches.append(idx)
+        if has_square:
+            square_patches.append(idx)
+        if not (has_circle or has_triangle or has_square):
+            empty_patches.append(idx)
+
+    assert circle_patches == [2, 3, 6, 7], f"Hình tròn phải nằm ở các patch [2, 3, 6, 7], thực tế: {circle_patches}"
+    assert triangle_patches == [5, 8, 9, 10, 12, 13, 14], f"Hình tam giác phải nằm ở các patch [5, 8, 9, 10, 12, 13, 14], thực tế: {triangle_patches}"
+    assert square_patches == [10, 11, 14, 15], f"Hình vuông vàng phải nằm ở các patch [10, 11, 14, 15], thực tế: {square_patches}"
+    assert empty_patches == [0, 1, 4], f"Nền trống phải nằm ở các patch [0, 1, 4], thực tế: {empty_patches}"
+
+
+def test_zero_emojis_and_icons():
+    """Kiểm thử tự động đảm bảo toàn bộ mã nguồn và tài liệu không chứa emoji hoặc icon."""
+    import unicodedata
+    import os
+
+    forbidden_characters = []
+    for root, dirs, files in os.walk(str(ROOT_DIR)):
+        if any(skip in root for skip in ['.git', '.pytest_cache', '__pycache__', '.venv', 'output']):
+            continue
+        for f in files:
+            if f.endswith(('.py', '.md', '.ipynb', '.txt', '.json')):
+                file_path = os.path.join(root, f)
+                with open(file_path, 'r', encoding='utf-8') as fh:
+                    content = fh.read()
+                for char in content:
+                    code = ord(char)
+                    # Chặn biến thể bộ chọn emoji, khối emoji Unicode, biểu tượng và pictograph
+                    if (0xFE00 <= code <= 0xFE0F or
+                        0x1F300 <= code <= 0x1FAFF or
+                        0x2600 <= code <= 0x27BF):
+                        forbidden_characters.append((f, hex(code), unicodedata.name(char, 'UNKNOWN')))
+
+    assert len(forbidden_characters) == 0, f"Phát hiện icon/emoji vi phạm quy tắc: {forbidden_characters}"
 
 
 def test_lora_linear_gradient_isolation():

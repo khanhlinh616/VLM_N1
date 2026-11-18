@@ -17,7 +17,7 @@ Dự án cung cấp bộ tài liệu, dữ liệu và mã nguồn hoàn chỉnh 
 presen/
 ├── data/                         Dữ liệu ảnh mẫu, patches và sơ đồ trực quan hóa
 │   ├── patches/                  Thư mục chứa 16 mẩu ảnh patch độc lập (16x16)
-│   ├── sample_geometry.png       Ảnh mẫu hình học (hình tròn đỏ, tam giác xanh, chữ nhật vàng)
+│   ├── sample_geometry.png       Ảnh mẫu hình học (hình tròn đỏ, tam giác xanh, hình vuông vàng)
 │   ├── sample_geometry_64x64.png Ảnh chuẩn hóa 64x64 dùng để chia Patch
 │   ├── sample_receipt.png        Ảnh mẫu hóa đơn thanh toán (DocVQA / OCR)
 │   ├── sample_chart.png          Ảnh mẫu biểu đồ doanh thu (ChartQA / Visual Math)
@@ -50,10 +50,10 @@ Trong nghiên cứu và đánh giá mô hình đa phương thức (đặc biệt
    - **Cấu trúc:** Nền xám nhạt ($245, 246, 250$), chứa:
      - Hình tròn đỏ ở góc trên bên phải ($x: 80..112, y: 16..48$).
      - Hình tam giác xanh lá ở góc dưới bên trái (đỉnh $48, 56$, đáy $16..80, y=112$).
-     - Hình chữ nhật vàng ở giữa bên phải ($x: 88..120, y: 72..104$).
+     - Hình vuông vàng ở giữa bên phải ($x: 88..120, y: 72..104$).
    - **Mục đích:**
      - Minh họa quá trình cắt ảnh thành lưới 16 patches ($4 \times 4$).
-     - Đo lường và vẽ biểu đồ nhiệt Cross-Modal Attention Heatmap thật từ token chữ (ví dụ: `"tam giác"`) chiếu chính xác lên các patches số 9, 10, 13, 14.
+     - Đo lường và vẽ biểu đồ nhiệt Cross-Modal Attention Heatmap thật từ token chữ (ví dụ: `"tam giác"`) chiếu chính xác lên các patches thuộc vùng tam giác (Patch #5, #8, #9, #10, #12, #13, #14), trọng số lớn nhất tại Patch #9.
      - Kiểm thử bẫy ảo giác (Hỏi: *"Trong ảnh có ngôi sao không?"* $\to$ Ground-truth: Hoàn toàn không có).
 2. **`sample_receipt.png` (Ảnh Hóa đơn Siêu thị VLM-Mart - DocVQA):**
    - **Cấu trúc:** Hóa đơn có viền, danh mục mặt hàng (Sữa tươi: 15.000đ, Bánh mì: 20.000đ, Nước suối: 10.000đ), Tổng tiền: 45.000đ, Ngày tháng và Mã vạch.
