@@ -36,6 +36,7 @@ presen/
 │   ├── vlm_utils.py              Tiện ích trích xuất patch ảnh, từ vựng đa phương thức, LoRALinear, POPE benchmark
 │   └── run_vlm_experiment.py     Script thực nghiệm suy luận toàn trình, đo lường định lượng và xuất kết quả
 ├── .gitignore                    Cấu hình loại trừ Git
+├── slides.html                   Bản trình chiếu Slide HTML 16:9 tương tác toàn trình (24 slides)
 └── README.md                     Tài liệu tổng quan dự án duy nhất
 ```
 

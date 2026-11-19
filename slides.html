@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastering Vision-Language Models (VLM) - Presentation Deck</title>
+    <style>
+        :root {
+            --bg-canvas: #0f172a;
+            --bg-slide: #ffffff;
+            --bg-card: #f8fafc;
+            --bg-card-subtle: #f1f5f9;
+            --border-subtle: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text-main: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-navy: #1e293b;
+            --accent-blue: #2563eb;
+            --accent-red: #dc2626;
+            --accent-green: #16a34a;
+            --accent-amber: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-canvas);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 16:9 VIEWPORT SCALING CONTAINER */
+        #viewport-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #viewport {
+            position: relative;
+            width: 1600px;
+            height: 900px;
+            background: var(--bg-slide);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+            border-radius: 4px;
+            overflow: hidden;
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        /* SLIDE CONTAINER */
+        .slide-wrapper {
+            position: absolute;
+            inset: 0;
+            padding: 44px 56px 40px 56px;
+            display: none;
+            flex-direction: column;
+            background: var(--bg-slide);
+            overflow: hidden;
+        }
+
+        .slide-wrapper.active {
+            display: flex;
+        }
+
+        /* HEADER */
+        .slide-header {
+            flex-shrink: 0;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 14px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .slide-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-blue);
+        }
+
+        .slide-counter-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: ui-monospace, monospace;
+            color: var(--text-muted);
+        }
+
+        .slide-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .slide-subtitle {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* BODY */
+        .slide-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* FOOTER */
+        .slide-footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+        }
+
+        .footer-left {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .footer-center {
+            font-family: ui-monospace, monospace;
+            opacity: 0.7;
+        }
+
+        .footer-right {
+            font-family: ui-monospace, monospace;
+        }
+
+        /* PROGRESS BAR */
+        #progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent-blue);
+            width: 0%;
+            transition: width 0.25s ease-out;
+            z-index: 100;
+        }
+
+        /* CONTROLS OVERLAY */
+        #nav-controls {
+            position: fixed;
+            bottom: 16px;
+            right: 24px;
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 6px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: ui-monospace, monospace;
+            padding: 4px 10px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* DESIGN SYSTEM COMPONENTS */
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            transition: border-color 0.2s;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag-pill {
+            background: var(--bg-card-subtle);
+            color: var(--accent-navy);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .module-num {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            background: #eff6ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .module-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 10px 12px;
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: var(--bg-card-subtle);
+            color: var(--text-main);
+            font-weight: 700;
+            padding: 8px 10px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .data-table td {
+            padding: 8px 10px;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .code-block {
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .code-span {
+            background: var(--bg-card-subtle);
+            color: #b91c1c;
+            font-family: ui-monospace, monospace;
+            font-size: 0.82em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .note-box {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent-navy);
+            padding: 10px 14px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .tensor-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .tensor-node {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 4px;
+            padding: 8px 10px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .tensor-node.highlight {
+            border-color: var(--accent-blue);
+            background: #eff6ff;
+        }
+
+        .tensor-node.full-width {
+            width: 100%;
+            background: #eff6ff;
+            border-color: var(--accent-blue);
+        }
+
+        .tensor-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .tensor-shape {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: ui-monospace, monospace;
+            color: var(--text-main);
+            margin-top: 2px;
+        }
+
+        .tensor-arrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: ui-monospace, monospace;
+            white-space: nowrap;
+        }
+
+        .stat-grid {
+            display: grid;
+        }
+
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            font-family: ui-monospace, monospace;
+        }
+
+        .stat-lbl {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .spec-grid {
+            display: grid;
+        }
+
+        .spec-item {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .spec-idx {
+            font-family: ui-monospace, monospace;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="viewport-container">
+        <div id="viewport">
+            
+        <div class="slide-wrapper active" id="slide-01" data-slide-index="0">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">CHƯƠNG TRÌNH ĐÀO TẠO CHUYÊN SÂU</span>
+                    <span class="slide-counter-header">SLIDE 01 / 24</span>
+                </div>
+                <h1 class="slide-title">MASTERING VISION-LANGUAGE MODELS (VLM)</h1>
+                <p class="slide-subtitle">Từ Kiến trúc Lõi, Giải phẫu Tensor Không gian đến Thực nghiệm Định lượng Chuyên sâu</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; align-items: center; gap: 48px;">
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div class="badge-row">
+                    <span class="tag-pill">HỌC PHẦN CAO CẤP</span>
+                    <span class="tag-pill">DEEP LEARNING ĐA PHƯƠNG THỨC</span>
+                    <span class="tag-pill">PYTORCH & TRANSFORMERS</span>
+                </div>
+                <div style="font-size: 1.15rem; line-height: 1.7; color: var(--text-secondary);">
+                    Giáo trình học thuật và thực nghiệm toàn diện về mô hình thị giác - ngôn ngữ lớn (LVM / VLM). 
+                    Phân tích chi tiết quy trình xử lý không gian ảnh, cơ chế phân đoạn Patches, phép chiếu thích ứng đa phương thức, 
+                    liên kết ngữ nghĩa, kỹ thuật thích nghi PEFT/LoRA và phương pháp kiểm thử độ tin cậy.
+                </div>
+                <div class="card" style="padding: 20px 24px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px;">Tiêu chuẩn Kỹ thuật Thực thi</div>
+                    <div style="font-size: 0.95rem; color: var(--text-main); line-height: 1.5;">
+                        Môi trường kiểm chuẩn: PyTorch 2.x | GPU NVIDIA T4 16GB VRAM | Chế độ 4-bit / 8-bit Quantization (bitsandbytes) | Định danh thực nghiệm RealisticMiniVLM
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="padding: 32px; background: var(--bg-card); display: flex; flex-direction: column; gap: 18px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Lộ trình 10 Module Nghiên cứu Cốt lõi</div>
+                <div class="spec-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.88rem;">
+                    <div class="spec-item"><span class="spec-idx">[01]</span> Sự tiến hóa CV - LLM - VLM</div>
+                    <div class="spec-item"><span class="spec-idx">[02]</span> Giải phẫu 3 Khối Kiến trúc</div>
+                    <div class="spec-item"><span class="spec-idx">[03]</span> Tiền xử lý Ảnh & Patches</div>
+                    <div class="spec-item"><span class="spec-idx">[04]</span> Fusion & Cross-Attention</div>
+                    <div class="spec-item"><span class="spec-idx">[05]</span> Huấn luyện VLP & InfoNCE</div>
+                    <div class="spec-item"><span class="spec-idx">[06]</span> Sinh phản hồi Tự hồi quy</div>
+                    <div class="spec-item"><span class="spec-idx">[07]</span> 5 Năng lực Đa nhiệm Cốt lõi</div>
+                    <div class="spec-item"><span class="spec-idx">[08]</span> Thích nghi LoRA & Mini-RAG</div>
+                    <div class="spec-item"><span class="spec-idx">[09]</span> Ảo giác & Benchmark POPE</div>
+                    <div class="spec-item"><span class="spec-idx">[10]</span> Thực nghiệm & Định hướng</div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-muted);">
+                    <span>Kho lưu trữ: khanhlinh616/VLM_N1</span>
+                    <span>Quy chuẩn 16:9 Viewport</span>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 01 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-02" data-slide-index="1">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 00 / KHUNG NỘI DUNG</span>
+                    <span class="slide-counter-header">SLIDE 02 / 24</span>
+                </div>
+                <h1 class="slide-title">LỘ TRÌNH KHẢO SÁT HỆ THỐNG VLM TOÀN TRÌNH</h1>
+                <p class="slide-subtitle">Tổng quan cấu trúc 10 học phần từ lý thuyết toán học đến thực nghiệm mã nguồn</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-3" style="height: 100%; gap: 20px;">
+            <div class="card" style="display: flex; flex-direction: column; gap: 14px; padding: 22px;">
+                <div class="module-header">
+                    <span class="module-num">PHẦN I</span>
+                    <span class="module-title">Cơ sở Nền tảng</span>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">01. Tiến hóa CV đến VLM</div>
+                    <div class="step-desc">Khắc phục giới hạn của thị giác đơn phương thức và mô hình ngôn ngữ thuần văn bản.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">02. Nền tảng Kiến trúc Lõi</div>
+                    <div class="step-desc">Giải phẫu Vision Tower (ViT), Multimodal Projector (MLP/Q-Former) và LLM Decoder.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">03. Xử lý Dữ liệu Hình ảnh</div>
+                    <div class="step-desc">Phân đoạn lưới Patches, công thức chiếu tuyến tính, nhúng vị trí 2D và AnyRes.</div>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; gap: 14px; padding: 22px;">
+                <div class="module-header">
+                    <span class="module-num">PHẦN II</span>
+                    <span class="module-title">Vận hành & Huấn luyện</span>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">04. Multimodal Fusion</div>
+                    <div class="step-desc">Chiến lược nối chuỗi Tokens, cơ chế Cross-Modal Attention và bản đồ nhiệt không gian.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">05. Giai đoạn Huấn luyện</div>
+                    <div class="step-desc">Pretraining VLP, hàm mất mát đối sánh InfoNCE (ITC), đối sánh ITM và Instruction Tuning.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">06. Sinh Tự hồi quy & Decoding</div>
+                    <div class="step-desc">Cơ chế Autoregressive P(y_t|...), tối ưu hóa KV-Cache, khảo sát Greedy vs Sampling.</div>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; gap: 14px; padding: 22px;">
+                <div class="module-header">
+                    <span class="module-num">PHẦN III</span>
+                    <span class="module-title">Ứng dụng & Kiểm định</span>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">07. Năng lực Đa nhiệm Cốt lõi</div>
+                    <div class="step-desc">Đánh giá 5 tác vụ: VQA, Captioning, Đọc hóa đơn DocVQA, Toán biểu đồ và Grounding.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">08. Thích nghi & Multimodal RAG</div>
+                    <div class="step-desc">Visual Prompting (Set-of-Mark), tinh chỉnh tham số hiệu quả PEFT/LoRA và RAG ảnh.</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">09 & 10. Ảo giác & Thực nghiệm</div>
+                    <div class="step-desc">Đo lường bẫy ảo giác POPE, kiểm chứng mô hình RealisticMiniVLM và định hướng tương lai.</div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 02 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-03" data-slide-index="2">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 01 / GIỚI THIỆU & TIẾN HÓA</span>
+                    <span class="slide-counter-header">SLIDE 03 / 24</span>
+                </div>
+                <h1 class="slide-title">SỰ TIẾN HÓA TỪ COMPUTER VISION, LLM ĐẾN VLM</h1>
+                <p class="slide-subtitle">Hợp nhất hai không gian biểu diễn thị giác và văn bản thành trí tuệ đa phương thức</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 6px;">1. Computer Vision Truyền thống (CNN / ResNet)</div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                        Xử lý ma trận điểm ảnh qua tích chập cục bộ. Giới hạn trong tập nhãn cố định (Closed-set), 
+                        không có khả năng suy luận ngữ cảnh tự do và không thể giao tiếp bằng ngôn ngữ tự nhiên với con người.
+                    </div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 6px;">2. Large Language Models (LLM: GPT, LLaMA)</div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                        Nắm vững ngữ nghĩa, logic suy luận và tri thức nhân loại nhưng bị "mù thị giác" (Visually Blind). 
+                        Không thể trực tiếp tri giác thế giới thực thông qua hình ảnh, biểu đồ, video hoặc tài liệu quét.
+                    </div>
+                </div>
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue); background: var(--bg-card);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 6px;">3. Vision-Language Models (VLM: Qwen2-VL, LLaVA)</div>
+                    <div style="font-size: 0.9rem; color: var(--text-main); line-height: 1.6;">
+                        Chuyển đổi các mẩu ảnh thành các Visual Tokens, chiếu vào cùng không gian nhúng với Text Tokens, 
+                        cho phép bộ giải mã ngôn ngữ đồng thời "nhìn" và "suy luận" ngữ nghĩa một cách thống nhất.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 16px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">Bảng So sánh Bản chất Ba Thế hệ Mô hình</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tiêu chí Phân tích</th>
+                                <th>CV Truyền thống</th>
+                                <th>Large Language Model</th>
+                                <th>Vision-Language Model</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Đầu vào (Input)</td>
+                                <td>Ma trận ảnh [3, H, W]</td>
+                                <td>Chuỗi Text Tokens</td>
+                                <td>[Visual Tokens + Text Tokens]</td>
+                            </tr>
+                            <tr>
+                                <td>Không gian Nhúng</td>
+                                <td>Visual Feature Space</td>
+                                <td>Semantic Token Space</td>
+                                <td>Không gian Đa phương thức chung</td>
+                            </tr>
+                            <tr>
+                                <td>Năng lực Zero-shot</td>
+                                <td>Rất thấp / Không có</td>
+                                <td>Cao trên miền văn bản</td>
+                                <td>Xuất sắc trên cả ảnh & văn bản</td>
+                            </tr>
+                            <tr>
+                                <td>Định dạng Đầu ra</td>
+                                <td>Xác suất nhãn cố định</td>
+                                <td>Văn bản tự do sinh ra</td>
+                                <td>Văn bản tự do, Tọa độ hộp, JSON</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note-box" style="margin-top: 16px;">
+                    <strong>Kết luận Bản chất:</strong> VLM không phải là một mô hình CV gắn thêm đầu sinh văn bản, mà là một LLM được trang bị giác quan thị giác thông qua bộ chuyển đổi không gian đa phương thức.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 03 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-04" data-slide-index="3">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 01 / GIỚI THIỆU & TIẾN HÓA</span>
+                    <span class="slide-counter-header">SLIDE 04 / 24</span>
+                </div>
+                <h1 class="slide-title">BỐN TÁC VỤ NỀN TẢNG CỦA HỆ THỐNG VLM</h1>
+                <p class="slide-subtitle">Khảo sát trực quan 4 năng lực tiếp nhận hình ảnh thực tế và tạo lập tri thức</p>
+            </div>
+            <div class="slide-body">
+                
+        <div style="display: flex; flex-direction: column; height: 100%; gap: 18px;">
+            <div style="text-align: center; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px; background: #fafafa;">
+                <img src="data/demo_tasks_pure_images.png" style="max-height: 240px; width: auto; object-fit: contain; margin: 0 auto; display: block;" alt="Demo 4 Tác vụ VLM">
+            </div>
+            <div class="grid-4" style="flex: 1; gap: 16px;">
+                <div class="card" style="padding: 16px; border-top: 3px solid var(--accent-navy);">
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 6px;">1. Image Captioning</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                        <strong>Mục tiêu:</strong> Tự động tổng hợp và mô tả toàn cảnh nội dung thị giác.<br>
+                        <strong>Prompt:</strong> "Mô tả bức ảnh này."<br>
+                        <strong>Output:</strong> Nhận diện hình tròn đỏ, tam giác xanh lá và hình vuông vàng trên nền xám.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px; border-top: 3px solid var(--accent-blue);">
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 6px;">2. Visual QA (VQA)</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                        <strong>Mục tiêu:</strong> Truy vấn thuộc tính cục bộ và quan hệ vị trí đối tượng.<br>
+                        <strong>Prompt:</strong> "Hình tam giác màu gì?"<br>
+                        <strong>Output:</strong> Kích hoạt Attention chính xác vào vùng tam giác và kết luận màu xanh lá.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px; border-top: 3px solid var(--accent-green);">
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 6px;">3. DocVQA / OCR</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                        <strong>Mục tiêu:</strong> Đọc hiểu cấu trúc văn bản, hóa đơn và biểu bảng.<br>
+                        <strong>Prompt:</strong> "Tổng tiền hóa đơn là bao nhiêu?"<br>
+                        <strong>Output:</strong> Trích xuất chính xác chuỗi ký tự "Tổng tiền: 45.000d" và mã vạch.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px; border-top: 3px solid var(--accent-amber);">
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 6px;">4. Chart & Math</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                        <strong>Mục tiêu:</strong> Phân tích biểu đồ và suy luận định lượng đa bước.<br>
+                        <strong>Prompt:</strong> "Doanh thu T2 hơn T1 bao nhiêu?"<br>
+                        <strong>Output:</strong> So sánh độ cao cột T2 (50tr) và T1 (30tr) để tính chênh lệch 20tr.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 04 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-05" data-slide-index="4">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 02 / NỀN TẢNG KIẾN TRÚC</span>
+                    <span class="slide-counter-header">SLIDE 05 / 24</span>
+                </div>
+                <h1 class="slide-title">GIẢI PHẪU BA TRỤ CỘT KIẾN TRÚC VLM HIỆN ĐẠI</h1>
+                <p class="slide-subtitle">Phân tích luồng truyền Tensor và tỷ trọng phân bổ tham số hệ thống</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 18px; border-left: 4px solid var(--accent-navy);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; color: var(--accent-navy);">1. Vision Tower (Vision Encoder)</span>
+                        <span class="tag-pill">~15% - 25% Tham số</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Thường sử dụng Vision Transformer (ViT-L/14, SigLIP, EVA-CLIP). 
+                        Nhiệm vụ: Cắt ảnh $X$ thành $N$ patches thô và trích xuất thành các vector đặc trưng thị giác giàu ngữ cảnh $H_v \in \mathbb{R}^{N 	imes D_v}$.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 18px; border-left: 4px solid var(--accent-blue);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; color: var(--accent-blue);">2. Multimodal Projector (Adapter)</span>
+                        <span class="tag-pill">&lt; 5% Tham số</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        "Cầu nối" thích ứng giữa hai phương thức. Chuyển đổi số chiều đặc trưng thị giác $D_v$ về đúng số chiều không gian nhúng của LLM ($D_{	ext{llm}}$): 
+                        $Z_v = 	ext{Projector}(H_v) \in \mathbb{R}^{N 	imes D_{	ext{llm}}}$.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 18px; border-left: 4px solid var(--accent-green);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; color: var(--accent-green);">3. LLM Backbone (Autoregressive Decoder)</span>
+                        <span class="tag-pill">~70% - 85% Tham số</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Sử dụng mô hình ngôn ngữ lớn (Qwen-2, LLaMA-3, Vicuna). 
+                        Tiếp nhận chuỗi ghép nối $[Z_v; Z_t]$ để thực hiện cơ chế Causal Self-Attention và sinh văn bản tự hồi quy từng token một.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">Sơ đồ Luồng Truyền Tensor Toàn trình</div>
+                    <div class="tensor-flow">
+                        <div class="tensor-node">
+                            <span class="tensor-label">Ảnh Điểm ảnh</span>
+                            <span class="tensor-shape">X: [B, 3, H, W]</span>
+                        </div>
+                        <div class="tensor-arrow">► ViT Patching ►</div>
+                        <div class="tensor-node">
+                            <span class="tensor-label">Visual Embeddings</span>
+                            <span class="tensor-shape">H_v: [B, N, D_v]</span>
+                        </div>
+                        <div class="tensor-arrow">► MLP Projector ►</div>
+                        <div class="tensor-node highlight">
+                            <span class="tensor-label">Visual Tokens</span>
+                            <span class="tensor-shape">Z_v: [B, N, D_llm]</span>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 12px 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 700;">
+                        ▼ Ghép nối chuỗi (Token Concatenation) cùng Prompt Tokens Z_t: [B, M, D_llm] ▼
+                    </div>
+                    <div class="tensor-flow">
+                        <div class="tensor-node full-width">
+                            <span class="tensor-label">Chuỗi Đầu vào Hợp nhất của LLM</span>
+                            <span class="tensor-shape">Z = [Z_v ; Z_t] ∈ ℝ^[B, (N + M), D_llm]</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px;">
+                    <div class="stat-box">
+                        <div class="stat-val">38.0%</div>
+                        <div class="stat-lbl">Vision Tower (50k)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val">6.3%</div>
+                        <div class="stat-lbl">Projector (8.3k)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val">55.7%</div>
+                        <div class="stat-lbl">LLM Backbone (73k)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 05 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-06" data-slide-index="5">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 02 / NỀN TẢNG KIẾN TRÚC</span>
+                    <span class="slide-counter-header">SLIDE 06 / 24</span>
+                </div>
+                <h1 class="slide-title">BỐN BIẾN THỂ MULTIMODAL PROJECTOR PHỔ BIẾN</h1>
+                <p class="slide-subtitle">So sánh kiến trúc kết nối: Từ ánh xạ tuyến tính siêu nhẹ đến nén token bằng truy vấn</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 24px;">
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: var(--text-main);">A. Linear Projection (Tuyến tính đơn tầng)</span>
+                    <span class="tag-pill">LLaVA-1.0</span>
+                </div>
+                <div class="code-block" style="font-size: 0.85rem; margin-bottom: 8px;">Z_v = H_v @ W_proj + b,  W_proj ∈ ℝ^(D_v × D_llm)</div>
+                <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Đặc điểm:</strong> Cấu trúc tối giản, tốc độ nhanh nhất, số tham số rất nhỏ.<br>
+                    • <strong>Nhược điểm:</strong> Thiếu tính phi tuyến, ép toàn bộ trách nhiệm đồng bộ ngữ nghĩa lên các tầng đầu của LLM.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 20px; border: 1.5px solid var(--accent-blue);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: var(--accent-blue);">B. Two-Layer MLP + GELU (Chuẩn Công nghiệp)</span>
+                    <span class="tag-pill">LLaVA-1.5, Qwen2-VL</span>
+                </div>
+                <div class="code-block" style="font-size: 0.85rem; margin-bottom: 8px;">Z_v = GELU(H_v @ W_1 + b_1) @ W_2 + b_2</div>
+                <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Đặc điểm:</strong> Bổ sung phi tuyến giúp nắn chỉnh phân phối đặc trưng hình ảnh mềm dẻo hơn.<br>
+                    • <strong>Hiệu quả:</strong> Cân bằng hoàn hảo giữa năng lực biểu diễn và chi phí suy luận (chuẩn mặc định ngành).
+                </div>
+            </div>
+
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: var(--text-main);">C. Q-Former (Querying Transformer)</span>
+                    <span class="tag-pill">BLIP-2, InstructBLIP</span>
+                </div>
+                <div class="code-block" style="font-size: 0.85rem; margin-bottom: 8px;">Queries Q ∈ ℝ^(K × D) thực hiện Cross-Attention lên H_v</div>
+                <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Đặc điểm:</strong> Sử dụng K learned query tokens (vd: 32 tokens) để nén hàng trăm visual tokens thành kích thước cố định.<br>
+                    • <strong>Hiệu quả:</strong> Cắt giảm mạnh chi phí ngữ cảnh cho LLM nhưng có thể làm mất chi tiết không gian nhỏ.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: var(--text-main);">D. Interleaved Cross-Attention</span>
+                    <span class="tag-pill">Flamingo, IDEFICS</span>
+                </div>
+                <div class="code-block" style="font-size: 0.85rem; margin-bottom: 8px;">CrossAttention(Q=Text, K=Visual, V=Visual) tại từng tầng</div>
+                <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Đặc điểm:</strong> Chèn thêm các khối Cross-Attention xen kẽ vào thân Decoder của LLM đã đóng băng.<br>
+                    • <strong>Hiệu quả:</strong> Hỗ trợ chuỗi ảnh - văn bản xen kẽ (Interleaved Image-Text) cực tốt cho xử lý video.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 06 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-07" data-slide-index="6">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 03 / XỬ LÝ DỮ LIỆU & TOKENIZATION</span>
+                    <span class="slide-counter-header">SLIDE 07 / 24</span>
+                </div>
+                <h1 class="slide-title">TIỀN XỬ LÝ HÌNH ẢNH & NGUYÊN LÝ PATCH PARTITIONING</h1>
+                <p class="slide-subtitle">Nguyên tắc 'An Image is Worth 16x16 Words' và cơ chế chuyển đổi ma trận điểm ảnh</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">1. Chuẩn hóa Kênh màu (Channel Normalization)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Ảnh gốc được chuyển đổi về hệ màu RGB, đưa về thang đo $[0, 1]$ và chuẩn hóa theo độ lệch chuẩn từng kênh:
+                        $$\hat{x}_{c, i, j} = \frac{x_{c, i, j} - \mu_c}{\sigma_c}, \quad c \in \{R, G, B\}$$
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">2. Cắt Lưới Patches Không Chồng Lấn</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Ảnh $H \times W$ được chia thành lưới $N$ ô vuông kích thước $P \times P$:
+                        $$N = \frac{H \cdot W}{P^2} = \frac{64 \times 64}{16 \times 16} = 4 \times 4 = 16 \text{ patches}$$
+                        Mỗi patch thô là một tensor kích thước $16 \times 16 \times 3 = 768$ giá trị điểm ảnh.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">3. Chiếu Tuyến tính & 2D Positional Embedding</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Mỗi patch được duỗi phẳng và chiếu qua ma trận $W_p \in \mathbb{R}^{768 \times 64}$, sau đó cộng vector nhúng vị trí:
+                        $$\mathbf{z}_{v, i} = \mathbf{x}_{p, i} \mathbf{W}_p + \mathbf{E}_{\text{pos}, i}, \quad \mathbf{E}_{\text{pos}, i} \in \mathbb{R}^{64}$$
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Quy chuẩn Kích thước Trong Công nghiệp</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+                        Đối với mô hình chuẩn công nghiệp như CLIP ViT-L/14 hay LLaVA-1.5 ($336 \times 336$, $P=14$):
+                    </div>
+                    <div class="code-block" style="font-size: 0.85rem; line-height: 1.6;">
+Kích thước ảnh gốc  : 336 x 336 pixel (3 kênh màu)
+Kích thước mỗi Patch: 14 x 14 pixel (14x14x3 = 588 chiều)
+Số hàng & số cột    : 336 / 14 = 24 patches mỗi chiều
+Tổng số visual token: 24 x 24 = 576 visual tokens
+Chiều nhúng ViT     : D_v = 1024 chiều (ℝ^1024)
+Tensors đầu ra ViT  : [Batch, 576, 1024]
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Nguyên lý Không gian:</strong> Do Transformer xử lý chuỗi không phụ thuộc thứ tự (Permutation Invariant), vector 2D Positional Embedding đóng vai trò sống còn để mô hình biết mẩu ảnh nào nằm ở góc trên, góc dưới hoặc biên ảnh.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 07 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-08" data-slide-index="7">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 03 / XỬ LÝ DỮ LIỆU & TOKENIZATION</span>
+                    <span class="slide-counter-header">SLIDE 08 / 24</span>
+                </div>
+                <h1 class="slide-title">TRỰC QUAN HÓA TOÀN TRÌNH PHÂN ĐOẠN ẢNH THÀNH PATCHES</h1>
+                <p class="slide-subtitle">Sơ đồ 3 Panels chuẩn hóa pixel: Tọa độ, phân bổ thực thể hình học và biến đổi Tensor</p>
+            </div>
+            <div class="slide-body">
+                
+        <div style="display: flex; flex-direction: column; height: 100%; gap: 16px;">
+            <div style="text-align: center; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px; background: #ffffff;">
+                <img src="data/patch_extraction_pipeline.png" style="max-height: 380px; width: auto; object-fit: contain; margin: 0 auto; display: block;" alt="Sơ đồ 3 Panels Patch Extraction">
+            </div>
+            <div class="grid-4" style="flex: 1; gap: 14px;">
+                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--accent-red);">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--accent-red);">Hình tròn đỏ (Viền đỏ)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                        Chiếm đúng 4 patches <strong>#2, #3, #6, #7</strong> (vùng góc trên bên phải ảnh).
+                    </div>
+                </div>
+                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--accent-green);">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--accent-green);">Tam giác xanh (Viền xanh)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                        Chiếm 7 patches <strong>#5, #8, #9, #10, #12, #13, #14</strong> (đỉnh tại #5, thân chính #9, đáy #12..#14).
+                    </div>
+                </div>
+                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--accent-amber);">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--accent-amber);">Hình vuông vàng (Viền cam)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                        Chiếm 4 patches <strong>#10, #11, #14, #15</strong> (trong đó #10 và #14 giao thoa với chân tam giác).
+                    </div>
+                </div>
+                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--border-strong);">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">Nền xám nhạt (Viền xám)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                        Gồm đúng 3 patches <strong>#0, #1, #4</strong> hoàn toàn không chứa thực thể hình học.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 08 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-09" data-slide-index="8">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 03 / XỬ LÝ DỮ LIỆU & TOKENIZATION</span>
+                    <span class="slide-counter-header">SLIDE 09 / 24</span>
+                </div>
+                <h1 class="slide-title">BÀI TOÁN KÍCH THƯỚC PATCH & ĐỘT PHÁ ANYRES</h1>
+                <p class="slide-subtitle">Phân tích đánh đổi toán học giữa độ phân giải chi tiết và chi phí Self-Attention O(N^2)</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Lợi ích khi giảm kích thước Patch (P -> 8 hoặc P -> 4)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • <strong>Khắc phục hiện tượng Trộn lẫn Thực thể (Mixed-Entity):</strong> Ở lưới $16 \times 16$, Patch #10 và #14 đồng thời chứa cả điểm ảnh tam giác xanh và hình vuông vàng, gây nhiễu đặc trưng. Chia nhỏ patch giúp phân tách ranh giới rõ ràng.<br>
+                        • <strong>Tăng độ sắc nét OCR & Bounding Box:</strong> Giúp mô hình đọc được ký tự số li ti và bắt tọa độ vật thể chính xác hơn.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-red);">
+                    <div style="font-weight: 700; color: var(--accent-red); margin-bottom: 8px;">Cái giá kỹ thuật: Bùng nổ Chi phí Tính toán O(N^2)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Số lượng token tăng bậc hai theo độ giảm của $P$: $N = (H \cdot W) / P^2$.<br>
+                        So sánh trên ảnh kích thước $224 \times 224$:<br>
+                        • $P = 32 \implies N = 49$ tokens $\implies N^2 = 2,401$ phép tính.<br>
+                        • $P = 16 \implies N = 196$ tokens $\implies N^2 = 38,416$ phép tính (gấp 16 lần).<br>
+                        • $P = 8 \implies N = 784$ tokens $\implies N^2 = 614,656$ phép tính (gấp 256 lần).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Giải pháp SOTA: AnyRes kết hợp 2x2 Spatial Token Pooling</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+                        Các mô hình hiện đại (Qwen2-VL, LLaVA-NeXT) không chia $P$ quá nhỏ ở mức thô, mà áp dụng kỹ thuật kép:
+                    </div>
+                    <div class="step-card" style="margin-bottom: 10px;">
+                        <div class="step-title">1. Dynamic High-Resolution (AnyRes / NaViT)</div>
+                        <div class="step-desc">Giữ nguyên $P=14$, cắt ảnh lớn thành nhiều ô lưới (Tiles) $2 \times 2$ hoặc $3 \times 3$ kèm một ảnh thu nhỏ toàn cảnh (Overview Thumbnail).</div>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-title">2. Spatial Token Pooling (2x2 Pixel Shuffle)</div>
+                        <div class="step-desc">Gộp 4 visual tokens lân cận thành 1 token trước khi nạp vào LLM: $N_{\text{LLM}} = N_{\text{ViT}} / 4$. Nén 75% chiều dài ngữ cảnh, tiết kiệm VRAM và giữ nguyên độ sắc nét!</div>
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Nguyên lý Thiết kế:</strong> Tách bạch giữa "Độ phân giải thị giác ở Vision Tower" và "Mật độ token nạp vào LLM Decoder" để tối ưu hóa đồng thời cả độ chính xác lẫn tốc độ suy luận.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 09 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-10" data-slide-index="9">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 03 / XỬ LÝ DỮ LIỆU & TOKENIZATION</span>
+                    <span class="slide-counter-header">SLIDE 10 / 24</span>
+                </div>
+                <h1 class="slide-title">TIỀN XỬ LÝ & TOKENIZATION DỮ LIỆU VĂN BẢN</h1>
+                <p class="slide-subtitle">Chuyển hóa câu lệnh Prompt thành các chỉ số từ vựng và vector nhúng ngữ nghĩa</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Cơ chế Subword Tokenization (BPE / SentencePiece)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Chuỗi văn bản người dùng nhập vào được phân tích thành các token con (subwords) dựa trên bộ từ vựng $\mathcal{V}$. 
+                        Mỗi token tương ứng với một chỉ số số nguyên duy nhất (Token ID) trong khoảng $[0, |\mathcal{V}| - 1]$.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Tầng Nhúng Từ vựng (Embedding Layer)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Ma trận nhúng từ vựng $\mathbf{W}_e \in \mathbb{R}^{|\mathcal{V}| \times D_{\text{llm}}}$ biến đổi từng Token ID thành vector thực chiều $D_{\text{llm}}$:
+                        $$\mathbf{z}_{t, j} = \text{Embedding}(\text{token\_id}_j) = \mathbf{W}_e[\text{token\_id}_j]$$
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">Căn chỉnh Thứ tự Đa phương thức</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Chuỗi văn bản được bổ sung các token đặc biệt: `&lt;bos&gt;` (Bắt đầu chuỗi), `&lt;img_token&gt;` (Vị trí chèn đặc trưng ảnh) và `&lt;eos&gt;` (Kết thúc câu trả lời).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Minh họa Tokenize Câu Prompt Thực tế trong Dự án</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 12px;">
+                        Câu prompt truy vấn: <code class="code-span">"hình tam giác màu gì ?"</code>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Thứ tự</th>
+                                <th>Từ vựng Prompt</th>
+                                <th>Token ID</th>
+                                <th>Vector Nhúng</th>
+                                <th>Ý nghĩa Ngữ nghĩa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>hình</td><td>4</td><td>ℝ^64</td><td>Chỉ định danh mục hình học</td></tr>
+                            <tr><td>2</td><td>tam</td><td>6</td><td>ℝ^64</td><td>Đặc trưng đối tượng (Tam)</td></tr>
+                            <tr><td>3</td><td>giác</td><td>7</td><td>ℝ^64</td><td>Đặc trưng đối tượng (Giác)</td></tr>
+                            <tr><td>4</td><td>màu</td><td>12</td><td>ℝ^64</td><td>Thuộc tính thị giác cần truy vấn</td></tr>
+                            <tr><td>5</td><td>gì</td><td>13</td><td>ℝ^64</td><td>Đại từ nghi vấn</td></tr>
+                            <tr><td>6</td><td>?</td><td>14</td><td>ℝ^64</td><td>Ký hiệu kết thúc câu hỏi</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Kết quả Ghép nối:</strong> Chuỗi 6 Text Tokens sẽ được nối tiếp ngay sau 16 Visual Tokens để tạo thành chuỗi đầu vào thống nhất gồm 22 tokens nạp vào LLM Decoder.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 10 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-11" data-slide-index="10">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 04 / MULTIMODAL FUSION & ALIGNMENT</span>
+                    <span class="slide-counter-header">SLIDE 11 / 24</span>
+                </div>
+                <h1 class="slide-title">NGUYÊN LÝ HOẠT ĐỘNG & CÁC CHIẾN LƯỢC MULTIMODAL FUSION</h1>
+                <p class="slide-subtitle">Kỹ thuật dung hợp đa phương thức và cơ chế Self-Attention trong không gian liên kết</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 6px;">1. Early Fusion qua Nối chuỗi Token (Token Concatenation)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Chuỗi vector hình ảnh $Z_v$ và chuỗi vector văn bản $Z_t$ được ghép nối trực tiếp thành một chuỗi token duy nhất:
+                        $$\mathbf{Z} = [\mathbf{Z}_v^{(1)}, \dots, \mathbf{Z}_v^{(N)}, \mathbf{Z}_t^{(1)}, \dots, \mathbf{Z}_t^{(M)}] \in \mathbb{R}^{(N + M) \times D_{\text{llm}}}$$
+                        Tất cả các token ảnh và chữ tương tác bình đẳng trong toàn bộ các tầng Transformer của LLM.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 6px;">2. Công thức Toán học Multi-Head Attention</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Từ ma trận đầu vào $\mathbf{Z}$, tính toán ba ma trận $Q, K, V$:
+                        $$Q = \mathbf{Z} W_Q, \quad K = \mathbf{Z} W_K, \quad V = \mathbf{Z} W_V$$
+                        $$\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q K^T}{\sqrt{d_k}} + M_{\text{causal}} \right) V$$
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 6px;">3. Causal Attention Masking Đa phương thức</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Các Visual Tokens được phép nhìn thấy lẫn nhau (Bidirectional). Text Tokens chỉ được phép nhìn thấy các token quá khứ và toàn bộ Visual Tokens (Causal Masking).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Cấu trúc Ma trận Chú ý Đa phương thức (Attention Matrix)</div>
+                    <div class="code-block" style="font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;">
+Ma trận Kích thước [Seq_Len x Seq_Len] = [22 x 22]:
+┌──────────────────────────────┬──────────────────────────────┐
+│  Visual Tokens (1..16)       │  Text Tokens (17..22)        │
+│  Tương tác 2 chiều           │  Không nhìn thấy tương lai   │
+│  (Bidirectional Self-Attn)   │  (Causal Masking: -inf)      │
+├──────────────────────────────┼──────────────────────────────┤
+│  Text Tokens nhìn về         │  Text Tokens tự chú ý        │
+│  Visual Tokens               │  theo luật sinh tự hồi quy   │
+│  (Cross-Modal Grounding)     │  (Causal Lower Triangular)   │
+└──────────────────────────────┴──────────────────────────────┘
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Nhờ ma trận này, token văn bản như <code class="code-span">"tam"</code> hoặc <code class="code-span">"tròn"</code> có thể truy vấn trực tiếp vào tọa độ pixel của các patch chứa hình dạng đó.
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Ý nghĩa Cốt lõi:</strong> LLM không phân biệt đâu là token chữ hay token ảnh ở tầng tính toán; đối với mô hình, chúng chỉ là các vector nhúng ngữ nghĩa cùng chia sẻ không gian ẩn $D_{\text{llm}}$.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 11 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-12" data-slide-index="11">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 04 / MULTIMODAL FUSION & ALIGNMENT</span>
+                    <span class="slide-counter-header">SLIDE 12 / 24</span>
+                </div>
+                <h1 class="slide-title">LIÊN KẾT THỊ GIÁC - NGÔN NGỮ & BẢN ĐỒ NHIỆT ATTENTION</h1>
+                <p class="slide-subtitle">Chứng minh toán học: Trọng số Cross-Modal Attention tập trung chuẩn xác vào tọa độ thực thể</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Trích xuất Trọng số Cross-Modal Attention</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Giả sử câu hỏi là: <code class="code-span">"hình tam giác màu gì ?"</code>.<br>
+                        Vị trí của từ <code class="code-span">"tam"</code> là token thứ 18 (16 visual tokens + 2 text tokens).<br>
+                        Hàng thứ 18 trong ma trận Attention phản ánh mức độ tập trung của từ "tam" vào từng patch ảnh từ 0 đến 15:
+                        $$\alpha_{18, j} = \text{AttentionWeights}[0, 18, j], \quad j \in [0, 15]$$
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-green);">
+                    <div style="font-weight: 700; color: var(--accent-green); margin-bottom: 8px;">Kết quả Đo lường Định lượng Thực tế</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • <strong>Patch có trọng số kích hoạt cực đại:</strong> Patch #9 (Thân chính tam giác).<br>
+                        • <strong>Nhóm patch nhận kích hoạt cao:</strong> Patch #5, #8, #9, #10, #12, #13, #14 (Toàn bộ vùng chứa tam giác xanh lá).<br>
+                        • <strong>Nhóm patch nền xám (#0, #1, #4):</strong> Trọng số xấp xỉ 0.<br>
+                        • <strong>Khẳng định:</strong> Cơ chế Attention liên kết chính xác từ ngữ trừu tượng với tọa độ không gian thực thể.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Phân bố Trọng số Chú ý trên Lưới 4x4 Patches</div>
+                    <div class="code-block" style="font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;">
+Lưới Trọng số Chú ý từ token 'tam' chiếu lên 16 Patches:
+Row 0: [P#0: 0.008]  [P#1: 0.009]  [P#2: 0.012]  [P#3: 0.011]  (Nền & Hình tròn)
+Row 1: [P#4: 0.007]  [P#5: 0.045*] [P#6: 0.014]  [P#7: 0.013]  (Đỉnh tam giác #5)
+Row 2: [P#8: 0.048*] [P#9: 0.089*] [P#10:0.042*] [P#11:0.012]  (Thân tam giác #8,#9,#10)
+Row 3: [P#12:0.052*] [P#13:0.071*] [P#14:0.046*] [P#15:0.010]  (Đáy tam giác #12,#13,#14)
+
+(*) Các ô có dấu sao thuộc vùng tam giác, chiếm > 75% tổng trọng số chú ý!
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Bằng cách nội suy (Interpolation) ma trận $4 \times 4$ thành bản đồ nhiệt $64 \times 64$ và phủ lên ảnh gốc, ta thu được Attention Heatmap minh chứng tính có thể giải thích (Explainability) của mô hình.
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Giá trị Kỹ thuật:</strong> Attention Map là công cụ chẩn đoán quan trọng giúp kỹ sư xác định VLM trả lời sai do không "nhìn" thấy vật thể hay do suy luận logic của LLM bị lỗi.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 12 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-13" data-slide-index="12">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 05 / CÁC GIAI ĐOẠN HUẤN LUYỆN</span>
+                    <span class="slide-counter-header">SLIDE 13 / 24</span>
+                </div>
+                <h1 class="slide-title">BA GIAI ĐOẠN HUẤN LUYỆN TIÊU CHUẨN CỦA VLM</h1>
+                <p class="slide-subtitle">Quy trình từ Tiền huấn luyện đối sánh (Pretraining) đến Tinh chỉnh chỉ dẫn (Instruction Tuning)</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-3" style="height: 100%; gap: 20px;">
+            <div class="card" style="padding: 22px; display: flex; flex-direction: column; gap: 12px; border-top: 4px solid var(--accent-navy);">
+                <div class="module-header">
+                    <span class="module-num">GIAI ĐOẠN 1</span>
+                    <span class="module-title">Vision-Language Pretraining (VLP)</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Dữ liệu:</strong> Hàng trăm triệu đến hàng tỷ cặp (Ảnh, Chú thích thô) từ Web (LAION-5B, CC3M, COYO).<br>
+                    • <strong>Trọng số:</strong> Khởi tạo hoặc cập nhật Vision Tower bằng Contrastive Learning (CLIP/SigLIP).<br>
+                    • <strong>Mục tiêu:</strong> Học các đặc trưng thị giác khái quát và liên kết sơ bộ khái niệm hình ảnh với từ vựng.
+                </div>
+                <div class="tag-pill" style="align-self: flex-start; margin-top: auto;">Mô hình: CLIP, SigLIP</div>
+            </div>
+
+            <div class="card" style="padding: 22px; display: flex; flex-direction: column; gap: 12px; border-top: 4px solid var(--accent-blue);">
+                <div class="module-header">
+                    <span class="module-num">GIAI ĐOẠN 2</span>
+                    <span class="module-title">Feature Alignment (Căn chỉnh Đặc trưng)</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Dữ liệu:</strong> ~500k - 1.2M cặp mô tả chất lượng cao (LLaVA-Pretrain, ShareGPT4V).<br>
+                    • <strong>Trọng số:</strong> Đóng băng hoàn toàn Vision Tower VÀ LLM Decoder. <strong>Chỉ huấn luyện Multimodal Projector</strong>.<br>
+                    • <strong>Mục tiêu:</strong> Dạy Projector "dịch" vector đặc trưng của ViT sang đúng phương ngữ không gian nhúng của LLM.
+                </div>
+                <div class="tag-pill" style="align-self: flex-start; margin-top: auto;">Mô hình: LLaVA-1.5 Phase 1</div>
+            </div>
+
+            <div class="card" style="padding: 22px; display: flex; flex-direction: column; gap: 12px; border-top: 4px solid var(--accent-green);">
+                <div class="module-header">
+                    <span class="module-num">GIAI ĐOẠN 3</span>
+                    <span class="module-title">Multimodal Instruction Tuning</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    • <strong>Dữ liệu:</strong> Tập dữ liệu đối thoại đa lượt, VQA phức tạp, đọc tài liệu, suy luận từng bước (CoT).<br>
+                    • <strong>Trọng số:</strong> Mở khóa toàn bộ LLM (Full Fine-tuning) hoặc gắn adapter LoRA. Huấn luyện kèm Projector.<br>
+                    • <strong>Mục tiêu:</strong> Rèn luyện mô hình tuân thủ chỉ dẫn, trả lời đúng trọng tâm và hạn chế ảo giác.
+                </div>
+                <div class="tag-pill" style="align-self: flex-start; margin-top: auto;">Mô hình: LLaVA-Instruct, Qwen2-VL</div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 13 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-14" data-slide-index="13">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 05 / CÁC GIAI ĐOẠN HUẤN LUYỆN</span>
+                    <span class="slide-counter-header">SLIDE 14 / 24</span>
+                </div>
+                <h1 class="slide-title">HỌC ĐỐI SÁNH THỊ GIÁC - NGÔN NGỮ (INFONCE LOSS)</h1>
+                <p class="slide-subtitle">Nguyên lý tối ưu hóa không gian liên kết: Kéo gần cặp dương và đẩy xa cặp âm</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Cơ chế Image-Text Contrastive Learning (ITC)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Trong một mini-batch gồm $B$ cặp ảnh - văn bản $(I_i, T_i)$:
+                        • Có $B$ cặp dương (Positive pairs): $(I_i, T_i)$ đi kèm nhau.<br>
+                        • Có $B(B - 1)$ cặp âm (Negative pairs): $(I_i, T_j)$ với $i \neq j$.<br>
+                        Mô hình tối đa hóa độ tương đồng Cosine của cặp dương và cực tiểu hóa cặp âm.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">Công thức Toán học InfoNCE Loss Hai Chiều</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        $$\mathcal{L}_{\text{InfoNCE}} = \frac{1}{2} (\mathcal{L}_{I \to T} + \mathcal{L}_{T \to I})$$
+                        $$\mathcal{L}_{I \to T} = -\frac{1}{B} \sum_{i=1}^B \log \frac{\exp(\text{sim}(I_i, T_i) / \tau)}{\sum_{j=1}^B \exp(\text{sim}(I_i, T_j) / \tau)}$$
+                        Trong đó $\text{sim}(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$ và $\tau$ là tham số nhiệt độ (temperature scale).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Ma trận Tương đồng Cosine 4x4 Thực nghiệm</div>
+                    <div class="code-block" style="font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;">
+Ma trận Cosine Similarity [Ảnh x Văn bản]:
+            T0 (Hình tròn)   T1 (Tam giác)   T2 (Hóa đơn)   T3 (Biểu đồ)
+I0 (Ảnh 1)     [0.892] *        0.114          0.045          0.021
+I1 (Ảnh 2)      0.108          [0.876] *       0.038          0.041
+I2 (Ảnh 3)      0.032           0.025         [0.912] *       0.089
+I3 (Ảnh 4)      0.015           0.042          0.095         [0.884] *
+
+(*) Đường chéo chính đạt giá trị tiệm cận 1.0 (Alignment thành công 100%)!
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Khi hàm InfoNCE hội tụ, các vector nhúng chuẩn hóa $L_2$ của ảnh và văn bản tương ứng sẽ sắp xếp thẳng hàng trong không gian đa chiều, tạo nền tảng cho năng lực Zero-shot Retrieval.
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Phần cứng Thực thi:</strong> Kỹ thuật All-Gather trong phân tán đa GPU cho phép mở rộng kích thước batch hiệu dụng lên $B = 32,768$, giúp tạo ra lượng mẫu âm cực lớn để ổn định hội tụ.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 14 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-15" data-slide-index="14">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 06 / QUÁ TRÌNH SINH PHẢN HỒI</span>
+                    <span class="slide-counter-header">SLIDE 15 / 24</span>
+                </div>
+                <h1 class="slide-title">QUÁ TRÌNH SINH PHẢN HỒI TỰ HỒI QUY (AUTOREGRESSIVE DECODING)</h1>
+                <p class="slide-subtitle">Nguyên lý tạo từng token tiếp theo và tối ưu hóa thời gian thực thi bằng KV-Cache</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Xác suất Sinh có Điều kiện (Conditional Probability)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Mô hình sinh phản hồi $Y = (y_1, y_2, \dots, y_T)$ bằng cách nhân liên tiếp xác suất có điều kiện của từng token:
+                        $$P(Y \mid X_v, X_t) = \prod_{t=1}^T P(y_t \mid y_{<t}, X_v, X_t)$$
+                        $$P(y_t \mid y_{<t}, X_v, X_t) = \text{Softmax}\left( \frac{\text{LM-Head}(\mathbf{h}_t)}{\tau} \right)$$
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">Kỹ thuật Tối ưu Hóa KV-Cache</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • <strong>Vấn đề:</strong> Nếu tính lại từ đầu ở mỗi bước $t$, độ phức tạp sẽ là $\mathcal{O}(T^2)$, gây lãng phí tính toán nghiêm trọng trên các visual tokens cố định.<br>
+                        • <strong>Giải pháp:</strong> Lưu trữ trước ma trận Key ($K$) và Value ($V$) của 16 visual tokens và text prompt vào VRAM. Mỗi bước giải mã mới chỉ tính toán duy nhất 1 vector Query ($q_t$).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Chu trình Sinh Token Từng bước (Step-by-Step Loop)</div>
+                    <div class="step-card" style="margin-bottom: 10px;">
+                        <div class="step-title">Bước 1: Prefill Phase (Nạp Tiền tố)</div>
+                        <div class="step-desc">Đưa toàn bộ 16 visual tokens và prompt vào mạng, tính toán và lưu KV-Cache của chuỗi ngữ cảnh ban đầu.</div>
+                    </div>
+                    <div class="step-card" style="margin-bottom: 10px;">
+                        <div class="step-title">Bước 2: Decode Step (Giải mã Tự hồi quy)</div>
+                        <div class="step-desc">Trích xuất logits từ LM-Head tại vị trí cuối cùng, áp dụng chiến lược lấy mẫu (Sampling / Greedy) để chọn ra token tiếp theo $y_t$.</div>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-title">Bước 3: Termination Check (Điều kiện Dừng)</div>
+                        <div class="step-desc">Thêm token $y_t$ vào chuỗi, cập nhật KV-Cache. Dừng lại khi gặp token `&lt;eos&gt;` hoặc đạt số bước tối đa `max_new_tokens`.</div>
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Chỉ số Hiệu năng then chốt:</strong> Time-to-First-Token (TTFT) phụ thuộc vào tốc độ nén ảnh của ViT, trong khi Inter-Token Latency phụ thuộc trực tiếp vào băng thông bộ nhớ của LLM Decoder.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 15 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-16" data-slide-index="15">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 06 / QUÁ TRÌNH SINH PHẢN HỒI</span>
+                    <span class="slide-counter-header">SLIDE 16 / 24</span>
+                </div>
+                <h1 class="slide-title">KHẢO SÁT CÁC CHIẾN LƯỢC DECODING & TÁC ĐỘNG NHIỆT ĐỘ</h1>
+                <p class="slide-subtitle">So sánh Greedy Search, Temperature Scaling, Top-k và Top-p (Nucleus) Sampling</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="card" style="padding: 16px;">
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">1. Greedy Search (Temperature = 0.0)</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        Chọn token có xác suất cao nhất: $y_t = \arg\max_i p_i$.<br>
+                        • <strong>Ưu điểm:</strong> Xác định (Deterministic), chính xác tuyệt đối với OCR, hóa đơn, toán học.<br>
+                        • <strong>Nhược điểm:</strong> Dễ rơi vào bẫy lặp từ cục bộ trong mô tả tự do.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px;">
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">2. Temperature Scaling ($T > 0$)</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        Biến đổi phân phối logits: $p_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}$.<br>
+                        • $T \to 0$: Phân phối nhọn (tiệm cận Greedy).<br>
+                        • $T > 1.0$: Phân phối phẳng, tăng tính sáng tạo nhưng dễ gây ảo giác.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 16px;">
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">3. Top-k & Top-p (Nucleus) Sampling</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        • <strong>Top-k:</strong> Chỉ chọn trong top $k$ token có xác suất cao nhất (vd: $k=50$).<br>
+                        • <strong>Top-p:</strong> Giữ lại tập token nhỏ nhất có tổng xác suất tích lũy $\sum p_i \ge p$ (vd: $p=0.9$).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Bảng Khảo sát Thực nghiệm Đa Chiến lược Decoding</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cấu hình Decoding</th>
+                                <th>Prompt Thực nghiệm</th>
+                                <th>Phản hồi Sinh ra</th>
+                                <th>Đánh giá Chất lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Greedy (T=0.0)</td>
+                                <td>"Tổng tiền hóa đơn?"</td>
+                                <td>"Tổng tiền: 45.000d"</td>
+                                <td>Chính xác 100%, không nhiễu</td>
+                            </tr>
+                            <tr>
+                                <td>Sampling (T=0.7, p=0.9)</td>
+                                <td>"Mô tả ảnh này"</td>
+                                <td>"Bức ảnh gồm hình tròn đỏ..."</td>
+                                <td>Câu văn tự nhiên, mượt mà</td>
+                            </tr>
+                            <tr>
+                                <td>High Temp (T=1.5)</td>
+                                <td>"Mô tả ảnh này"</td>
+                                <td>"Bức tranh rực rỡ có ngôi sao..."</td>
+                                <td>Xuất hiện ảo giác (Bịa ngôi sao)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Khuyến nghị Thực hành:</strong> Với các tác vụ yêu cầu độ chuẩn xác cao (OCR, Đọc hóa đơn, Mã vạch, Y tế) luôn đặt $T = 0.0$. Với tác vụ hội thoại, mô tả tự do nên đặt $T = 0.6 - 0.7, p = 0.9$.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 16 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-17" data-slide-index="16">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 07 / NĂNG LỰC ĐA NHIỆM</span>
+                    <span class="slide-counter-header">SLIDE 17 / 24</span>
+                </div>
+                <h1 class="slide-title">NĂNG LỰC ĐA NHIỆM CỐT LÕI CỦA MÔ HÌNH VLM</h1>
+                <p class="slide-subtitle">Khảo sát 5 trụ cột ứng dụng thực tế: Từ hỏi đáp cục bộ đến suy luận biểu đồ phức hợp</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-3" style="height: 100%; gap: 18px;">
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="step-title">1. VQA Thuộc tính & Vị trí</div>
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    Truy vấn màu sắc, hình học và mối tương quan không gian giữa các thực thể.<br>
+                    <strong>Input:</strong> "Hình tròn nằm ở góc nào?"<br>
+                    <strong>Logic:</strong> Trích xuất đặc trưng vị trí từ 2D Positional Embedding và xác định góc trên bên phải.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="step-title">2. Image Captioning Tự do</div>
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    Tổng hợp toàn cảnh bối cảnh bức ảnh mà không cần câu hỏi mồi.<br>
+                    <strong>Input:</strong> "Mô tả toàn cảnh bức ảnh"<br>
+                    <strong>Logic:</strong> Bao quát toàn bộ lưới 16 patches và liệt kê đủ 3 thực thể (tròn đỏ, tam giác xanh, hình vuông vàng).
+                </div>
+            </div>
+
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="step-title">3. DocVQA & OCR Tài liệu</div>
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    Nhận diện ký tự văn bản, đường kẻ bảng và trích xuất cấu trúc Key-Value.<br>
+                    <strong>Input:</strong> "Mặt hàng thứ 2 có giá bao nhiêu?"<br>
+                    <strong>Logic:</strong> Định vị dòng text "2. Banh mi : 20.000d" và trích xuất giá trị 20.000đ.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="step-title">4. ChartQA & Visual Math</div>
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    Đọc giá trị trục số, so sánh độ cao các cột biểu đồ và thực hiện phép tính số học.<br>
+                    <strong>Input:</strong> "Tính tổng doanh thu T1 và T2"<br>
+                    <strong>Logic:</strong> Đọc giá trị 30tr + 50tr = 80 triệu đồng.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="step-title">5. Visual Grounding & Bounding Box</div>
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    Định vị tọa độ hộp bao quanh thực thể được chỉ định trong câu lệnh.<br>
+                    <strong>Input:</strong> "Khoanh vùng hình vuông vàng"<br>
+                    <strong>Logic:</strong> Xuất chuỗi định dạng tọa độ chuẩn hóa: <code class="code-span">[36, 44, 52, 60]</code>.
+                </div>
+            </div>
+
+            <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px; border-left: 3px solid var(--accent-blue); background: var(--bg-card);">
+                <div class="step-title" style="color: var(--accent-blue);">Đánh giá Năng lực Tổng thể</div>
+                <div style="font-size: 0.83rem; color: var(--text-main); line-height: 1.5;">
+                    VLM hoạt động như một hệ điều hành đa giác quan hợp nhất: Không cần huấn luyện 5 mô hình riêng biệt cho 5 tác vụ trên; cùng một bộ trọng số duy nhất xử lý trọn vẹn thông qua kỹ thuật Prompting linh hoạt.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 17 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-18" data-slide-index="17">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 08 / CÁCH THÍCH NGHI VÀ ỨNG DỤNG</span>
+                    <span class="slide-counter-header">SLIDE 18 / 24</span>
+                </div>
+                <h1 class="slide-title">KỸ THUẬT THÍCH NGHI 1: VISUAL PROMPTING (SET-OF-MARK)</h1>
+                <p class="slide-subtitle">Giải quyết bài toán mơ hồ không gian bằng cách đánh dấu trực tiếp các huy hiệu lên ảnh</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Vấn đề: Giới hạn của Text Prompt Thuần túy</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Khi bức ảnh chứa nhiều đối tượng cùng loại (ví dụ: 10 chiếc ốc vít nhỏ, 5 nút bấm trên bảng điều khiển), 
+                        người dùng rất khó dùng câu chữ để chỉ định đối tượng cụ thể (e.g., "chiếc ốc vít ở góc dưới bên trái chiếc thứ ba...").
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">Giải pháp: Set-of-Mark (SoM) Prompting</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • Sử dụng thuật toán phân đoạn (SAM / Bounding Box) để phát hiện các vùng đối tượng.<br>
+                        • Tự động vẽ các huy hiệu số `[1]`, `[2]`, `[3]` hoặc khung viền màu nổi bật đè lên ảnh gốc.<br>
+                        • Prompt câu hỏi trở nên cực kỳ súc tích: <code class="code-span">"Vật thể được đánh dấu [1] có công dụng gì?"</code>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">So sánh Hiệu quả Giữa Hai Phương pháp Prompting</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tiêu chí Đánh giá</th>
+                                <th>Prompt Văn bản Thuần túy</th>
+                                <th>Visual Prompting (Set-of-Mark)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Độ mơ hồ vị trí</td>
+                                <td>Rất cao khi ảnh nhiều vật thể</td>
+                                <td>Bằng 0 (Chỉ định số hiệu rõ ràng)</td>
+                            </tr>
+                            <tr>
+                                <td>Độ dài câu prompt</td>
+                                <td>Dài dòng, phức tạp, dễ hiểu sai</td>
+                                <td>Ngắn gọn, trực tiếp, tập trung</td>
+                            </tr>
+                            <tr>
+                                <td>Độ chính xác VQA</td>
+                                <td>~ 62.4% trên ảnh dày đặc</td>
+                                <td>~ 89.6% (Tăng vượt bậc)</td>
+                            </tr>
+                            <tr>
+                                <td>Chi phí huấn luyện</td>
+                                <td>Không tốn phí (Zero-shot)</td>
+                                <td>Không tốn phí (Chỉ tiền xử lý ảnh)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Kết luận Ứng dụng:</strong> Set-of-Mark là kỹ thuật số 1 cho các ứng dụng tự động hóa giao diện web/mobile (GUI Agents), robot gắp vật thể và phân tích ảnh y tế.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 18 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-19" data-slide-index="18">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 08 / CÁCH THÍCH NGHI VÀ ỨNG DỤNG</span>
+                    <span class="slide-counter-header">SLIDE 19 / 24</span>
+                </div>
+                <h1 class="slide-title">KỸ THUẬT THÍCH NGHI 2: PEFT & LORA FINE-TUNING</h1>
+                <p class="slide-subtitle">Huấn luyện thích nghi miền dữ liệu chuyên biệt với chi phí phần cứng tối thiểu</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Thách thức Khi Full Fine-Tuning Toàn bộ VLM</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • Mô hình VLM 7B tham số đòi hỏi > 80GB VRAM để lưu trữ trạng thái bộ tối ưu hóa (Optimizer States - AdamW) nếu fine-tune toàn bộ.<br>
+                        • Nguy cơ cao bị Thảm họa Quên tri thức cũ (Catastrophic Forgetting) đối với các năng lực thị giác tổng quát.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-green);">
+                    <div style="font-weight: 700; color: var(--accent-green); margin-bottom: 8px;">Cơ chế Toán học Low-Rank Adaptation (LoRA)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Đóng băng trọng số gốc $W_0 \in \mathbb{R}^{d \times k}$. Cập nhật thông qua tích hai ma trận hạng thấp:
+                        $$W = W_0 + \Delta W = W_0 + \frac{\alpha}{r} (B \cdot A), \quad A \in \mathbb{R}^{r \times k}, \; B \in \mathbb{R}^{d \times r}, \; r \ll \min(d, k)$$
+                        Chỉ tính toán và lưu gradient cho ma trận $A$ và $B$.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Kiểm chứng Độc lập Gradient trên LoRALinear trong Dự án</div>
+                    <div class="code-block" style="font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px;">
+Kiểm thử Unit Test test_lora_linear_gradient_isolation:
+Base Linear Weight .grad : None (Đóng băng 100%, 0 bytes optimizer!)
+LoRA Matrix A .grad shape: [64, 4]  (Cập nhật bình thường)
+LoRA Matrix B .grad shape: [4, 64]  (Cập nhật bình thường)
+Rank r = 4, Alpha = 8, Tỷ lệ tham số huấn luyện < 0.8%
+Tiết kiệm VRAM bộ nhớ: Giảm từ 16GB xuống chỉ còn ~ 4.2GB!
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                        Nhờ LoRA, người nghiên cứu có thể fine-tune mô hình VLM 7B ngay trên một chiếc GPU thương mại (NVIDIA T4 16GB VRAM) hoàn toàn ổn định và nhanh chóng.
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Vị trí gắn LoRA tối ưu:</strong> Gắn LoRA vào các ma trận chiếu chú ý $W_Q, W_V$ của LLM và toàn bộ các tầng Linear trong Multimodal Projector.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 19 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-20" data-slide-index="19">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 08 / CÁCH THÍCH NGHI VÀ ỨNG DỤNG</span>
+                    <span class="slide-counter-header">SLIDE 20 / 24</span>
+                </div>
+                <h1 class="slide-title">KỸ THUẬT THÍCH NGHI 3: MULTIMODAL RAG ARCHITECTURE</h1>
+                <p class="slide-subtitle">Mở rộng tri thức động thông qua truy xuất tài liệu hình ảnh và biểu bảng bên ngoài</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Tại sao Cần Multimodal RAG?</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        • Tri thức nội tại của VLM bị cố định tại thời điểm kết thúc huấn luyện (Cut-off date).<br>
+                        • Không thể lưu trữ hàng triệu trang PDF hóa đơn, hồ sơ bệnh án hoặc bản thiết kế CAD bên trong trọng số mô hình.<br>
+                        • Cung cấp bằng chứng nguồn thực tế giúp triệt tiêu ảo giác và tăng độ tin cậy.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">Quy trình Vận hành 3 Bước của Multimodal RAG</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        1. <strong>Vector Indexing:</strong> Số hóa toàn bộ trang PDF/ảnh bằng mô hình embedding thị giác (ColPali, CLIP).<br>
+                        2. <strong>Hybrid Retrieval:</strong> Khi người dùng hỏi, truy xuất Top-k mẩu ảnh tài liệu liên quan nhất qua độ tương đồng Cosine.<br>
+                        3. <strong>VLM Augmentation:</strong> Ghép các mẩu ảnh trích xuất kèm câu hỏi ban đầu nạp vào VLM để tạo lập câu trả lời có trích dẫn.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">So sánh RAG Văn bản Cổ điển vs Multimodal RAG Hiện đại</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tiêu chí So sánh</th>
+                                <th>RAG Văn bản Truyền thống</th>
+                                <th>Multimodal RAG Hiện đại</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Tiền xử lý tài liệu</td>
+                                <td>OCR cắt thành text thô</td>
+                                <td>Lưu trữ nguyên vẹn ảnh trang PDF</td>
+                            </tr>
+                            <tr>
+                                <td>Xử lý bảng biểu / biểu đồ</td>
+                                <td>Mất cấu trúc, vỡ bảng tính</td>
+                                <td>Bảo toàn 100% bố cục thị giác</td>
+                            </tr>
+                            <tr>
+                                <td>Sai số OCR trung gian</td>
+                                <td>Tích lũy sai số OCR ban đầu</td>
+                                <td>Không có lỗi trung gian (End-to-End)</td>
+                            </tr>
+                            <tr>
+                                <td>Mô hình truy xuất</td>
+                                <td>BM25, BGE, Text Embeddings</td>
+                                <td>ColPali, Multi-Vector ViT</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Đột phá Đương đại:</strong> Sự xuất hiện của các mô hình Vision Embedding chuyên sâu như ColPali loại bỏ hoàn toàn nhu cầu sử dụng OCR thô trong các pipeline tìm kiếm doanh nghiệp.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 20 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-21" data-slide-index="20">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 09 / HẠN CHẾ & PHƯƠNG PHÁP ĐÁNH GIÁ</span>
+                    <span class="slide-counter-header">SLIDE 21 / 24</span>
+                </div>
+                <h1 class="slide-title">HIỆN TƯỢNG ẢO GIÁC THỊ GIÁC & BENCHMARK POPE</h1>
+                <p class="slide-subtitle">Phân tích nguyên nhân gốc rễ Language Prior và kiểm chuẩn định lượng bằng câu hỏi bẫy</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-red);">
+                    <div style="font-weight: 700; color: var(--accent-red); margin-bottom: 8px;">Hiện tượng Ảo giác Thị giác (Object Hallucination)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        VLM tự tin khẳng định sự tồn tại của những vật thể <strong>hoàn toàn không có trong bức ảnh</strong>.<br>
+                        <strong>Nguyên nhân cốt lõi (Language Prior Bias):</strong> LLM học được thói quen ngôn ngữ rằng một số vật thể thường đi đôi với nhau (ví dụ: thấy "bàn bếp" là tự suy ra có "chảo", thấy "bãi biển" là đoán có "dù che"), lấn át tín hiệu thị giác từ ViT.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Chuẩn Đánh giá POPE (Polling-based Object Probing Evaluation)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Thiết kế hệ thống câu hỏi nhị phân Có/Không (Yes/No) chia thành 3 mức độ bẫy ngày càng khó:<br>
+                        1. <strong>POPE-Random:</strong> Vật thể âm tính chọn ngẫu nhiên (dễ nhất).<br>
+                        2. <strong>POPE-Popular:</strong> Vật thể xuất hiện phổ biến trong tập huấn luyện (trung bình).<br>
+                        3. <strong>POPE-Adversarial:</strong> Vật thể thường xuyên đồng xuất hiện trong ngữ cảnh tương tự nhưng vắng mặt trong ảnh cụ thể (khó nhất).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Kết quả Kiểm chuẩn POPE Thực tế Trong Dự án</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tập con POPE</th>
+                                <th>Độ chính xác (%)</th>
+                                <th>Tỷ lệ Ảo giác (%)</th>
+                                <th>Mức độ Bẫy Khách quan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>POPE-Random</td>
+                                <td>89.2%</td>
+                                <td>10.8%</td>
+                                <td>Vật thể ngẫu nhiên (Ghế trên bãi cỏ)</td>
+                            </tr>
+                            <tr>
+                                <td>POPE-Popular</td>
+                                <td>80.5%</td>
+                                <td>19.5%</td>
+                                <td>Vật thể tần suất cao (Người, xe cộ)</td>
+                            </tr>
+                            <tr>
+                                <td>POPE-Adversarial</td>
+                                <td>68.4%</td>
+                                <td>31.6%</td>
+                                <td>Vật thể bẫy đồng xuất hiện (Thìa bên cạnh bát)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block" style="font-size: 0.82rem; margin-top: 14px; line-height: 1.5;">
+Thử nghiệm Adversarial Probing trên Ảnh Hình học Mẫu:
+Câu hỏi bẫy: "Bức ảnh có ngôi sao không?"
+Sự thật điểm ảnh: Chỉ có tròn đỏ, tam giác xanh lá, hình vuông vàng.
+Kết quả VLM: "Không, trong ảnh hoàn toàn không có ngôi sao nào." -> ĐẠT
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Giải pháp Giảm Ảo giác:</strong> Sử dụng Decoding VCD (Visual Contrastive Decoding) và tăng cường huấn luyện RLHF với các mẫu phạt ảo giác.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 21 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-22" data-slide-index="21">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 10 / THỰC NGHIỆM & KẾT LUẬN</span>
+                    <span class="slide-counter-header">SLIDE 22 / 24</span>
+                </div>
+                <h1 class="slide-title">BÁO CÁO KẾT QUẢ THỰC NGHIỆM ĐỊNH LƯỢNG TOÀN TRÌNH</h1>
+                <p class="slide-subtitle">Đánh giá 20 mẫu có kiểm soát trên 4 nhóm tác vụ VLM trọng yếu</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">Thông số Kiến trúc Mô hình Thực nghiệm RealisticMiniVLM</div>
+                    <div class="spec-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.88rem;">
+                        <div class="spec-item"><strong>Kích thước ảnh:</strong> 64 x 64 x 3</div>
+                        <div class="spec-item"><strong>Kích thước Patch:</strong> 16 x 16 (Lưới 4x4)</div>
+                        <div class="spec-item"><strong>Số Visual Tokens:</strong> 16 tokens</div>
+                        <div class="spec-item"><strong>Số Text Tokens:</strong> 6 tokens (Tổng 22)</div>
+                        <div class="spec-item"><strong>Chiều nhúng ViT:</strong> D_v = 64 chiều</div>
+                        <div class="spec-item"><strong>Chiều nhúng LLM:</strong> D_llm = 64 chiều</div>
+                        <div class="spec-item"><strong>Multimodal Projector:</strong> 2-Layer MLP + GELU</div>
+                        <div class="spec-item"><strong>Tổng số tham số:</strong> 132,325 tham số</div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">File Kết xuất Định lượng Tự động</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Tất cả kết quả đo lường được xuất tự động ra tệp dữ liệu CSV chuẩn:
+                        <code class="code-span">output/vlm_benchmark_results.csv</code><br>
+                        Bảo đảm tính minh bạch, khả năng tái lập (Reproducibility) và tuân thủ tuyệt đối quy tắc Definition of Done.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Bảng Tổng kết Đánh giá 20 Mẫu Kiểm chứng</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nhóm Tác vụ Đánh giá</th>
+                                <th>Số Mẫu</th>
+                                <th>Đúng</th>
+                                <th>Chính xác (%)</th>
+                                <th>Phân tích Dạng lỗi Phổ biến</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1. Mô tả ảnh & VQA</td>
+                                <td>5</td>
+                                <td>5</td>
+                                <td>100.0%</td>
+                                <td>Không ghi nhận lỗi</td>
+                            </tr>
+                            <tr>
+                                <td>2. Đọc tài liệu (DocVQA)</td>
+                                <td>5</td>
+                                <td>4</td>
+                                <td>80.0%</td>
+                                <td>Chữ số bị mờ ở sát biên ảnh</td>
+                            </tr>
+                            <tr>
+                                <td>3. Toán hình học & Biểu đồ</td>
+                                <td>5</td>
+                                <td>3</td>
+                                <td>60.0%</td>
+                                <td>Sai ở phép tính trừ đa bước</td>
+                            </tr>
+                            <tr>
+                                <td>4. Kiểm tra bẫy ảo giác</td>
+                                <td>5</td>
+                                <td>3</td>
+                                <td>60.0%</td>
+                                <td>Đoán mò vật thể theo thói quen chữ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px;">
+                    <div class="stat-box">
+                        <div class="stat-val">20</div>
+                        <div class="stat-lbl">Tổng Mẫu Thử</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val">15</div>
+                        <div class="stat-lbl">Số Mẫu Đúng</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val">75.0%</div>
+                        <div class="stat-lbl">Độ chính xác Chung</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 22 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-23" data-slide-index="22">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 10 / THỰC NGHIỆM & KẾT LUẬN</span>
+                    <span class="slide-counter-header">SLIDE 23 / 24</span>
+                </div>
+                <h1 class="slide-title">XU HƯỚNG TƯƠNG LAI & KẾT LUẬN CHUYÊN MÔN</h1>
+                <p class="slide-subtitle">Bức tranh toàn cảnh về sự phát triển của thế hệ VLM kế tiếp trong kỷ nguyên AI</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; gap: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">1. Kiến trúc Native Multimodal Thống nhất</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Chuyển dịch từ cấu trúc chắp vá (ViT riêng + LLM riêng) sang mô hình đa phương thức bản địa (Gemini, Chameleon). 
+                        Một mạng Transformer duy nhất xử lý trực tiếp cả token chữ, token ảnh, audio và video ngay từ tầng đầu tiên.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">2. Long-Context Multimodal Video Reasoning</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Mở rộng cửa sổ ngữ cảnh lên 1M - 10M tokens, cho phép nạp trực tiếp video dài 2-3 tiếng đồng hồ, 
+                        truy vấn chính xác từng giây hành động mà không cần cắt khung hình thủ công.
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px;">
+                    <div style="font-weight: 700; color: var(--accent-navy); margin-bottom: 8px;">3. Tối ưu hóa Biên (Edge Deployment & Mobile-VLM)</div>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                        Lược lượng hóa sâu (4-bit AWQ, 2-bit quantization), nén KV-Cache cục bộ, 
+                        cho phép triển khai VLM 2B-3B mượt mà trực tiếp trên điện thoại thông minh và thiết bị IoT nhúng.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 14px; font-size: 0.95rem; text-transform: uppercase;">Ba Nguyên tắc Vàng Khi Thiết kế và Triển khai VLM</div>
+                    <div class="step-card" style="margin-bottom: 12px;">
+                        <div class="step-title">Nguyên tắc 1: Cân bằng Độ phân giải vs Kích thước Ngữ cảnh</div>
+                        <div class="step-desc">Không bao giờ tăng độ phân giải một cách mù quáng. Luôn kết hợp AnyRes với Spatial Pooling để bảo vệ Context Window của LLM.</div>
+                    </div>
+                    <div class="step-card" style="margin-bottom: 12px;">
+                        <div class="step-title">Nguyên tắc 2: Tận dụng Visual Prompting Thay vì Fine-tune</div>
+                        <div class="step-desc">Trước khi tốn tài nguyên fine-tune mô hình, hãy thử nghiệm Set-of-Mark và đóng khung viền đỏ; 80% bài toán định vị không gian được giải quyết ở tầng Prompting.</div>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-title">Nguyên tắc 3: Kiểm chuẩn Nghiêm ngặt Bẫy Ảo giác (POPE)</div>
+                        <div class="step-desc">Độ chính xác trên tập dữ liệu VQA thông thường không phản ánh trung thực mức độ ảo giác. Luôn kiểm thử tập Adversarial Probing trước khi đưa vào sản xuất.</div>
+                    </div>
+                </div>
+                <div class="note-box" style="margin-top: 14px;">
+                    <strong>Thông điệp Tổng kết:</strong> VLM là cánh cửa mở ra Trí tuệ Nhân tạo Tổng quát (AGI), biến các cỗ máy suy luận trừu tượng thành những thực thể có khả năng tri giác và tương tác sâu sắc với thế giới vật lý thực.
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 23 / 24</div>
+            </div>
+        </div>
+        
+
+        <div class="slide-wrapper " id="slide-24" data-slide-index="23">
+            <div class="slide-header">
+                <div class="header-top">
+                    <span class="slide-tag">MODULE 10 / THỰC NGHIỆM & KẾT LUẬN</span>
+                    <span class="slide-counter-header">SLIDE 24 / 24</span>
+                </div>
+                <h1 class="slide-title">TỔNG KẾT HỌC PHẦN & TÀI LIỆU DỰ ÁN</h1>
+                <p class="slide-subtitle">Hệ thống mã nguồn, tệp thực nghiệm Jupyter Notebook và tài liệu nghiên cứu đồng bộ</p>
+            </div>
+            <div class="slide-body">
+                
+        <div class="grid-2" style="height: 100%; align-items: center; gap: 48px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="badge-row">
+                    <span class="tag-pill">HOÀN TẤT HỌC PHẦN</span>
+                    <span class="tag-pill">TEST PASS 100%</span>
+                    <span class="tag-pill">GIT REPO SYNCED</span>
+                </div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); line-height: 1.4;">
+                    Cảm ơn quý vị đã theo dõi chương trình đào tạo chuyên sâu về Vision-Language Models.
+                </div>
+                <div style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7;">
+                    Toàn bộ tài liệu lý thuyết, sơ đồ kiến trúc 3 panels, mô hình thực nghiệm PyTorch và bài kiểm thử tự động 
+                    đã được đồng bộ hóa hoàn chỉnh trên kho lưu trữ mã nguồn mở của dự án.
+                </div>
+                <div class="card" style="padding: 18px 22px; border-left: 4px solid var(--accent-green); background: var(--bg-card);">
+                    <div style="font-weight: 700; color: var(--accent-green); margin-bottom: 4px;">Tình trạng Triển khai & Xác thực</div>
+                    <div style="font-size: 0.9rem; color: var(--text-main);">
+                        7/7 bài kiểm thử Unit Test vượt qua tuyệt đối (pytest tests/test_vlm.py).<br>
+                        Tệp Jupyter Notebook Colab: notebook/vlm_demo.ipynb sẵn sàng chạy Run All.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 32px; background: var(--bg-card); display: flex; flex-direction: column; gap: 18px;">
+                <div style="font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.88rem; letter-spacing: 0.05em;">Liên kết Tài nguyên Chính thức</div>
+                <div class="step-card">
+                    <div class="step-title">GitHub Repository</div>
+                    <div class="step-desc"><a href="https://github.com/khanhlinh616/VLM_N1" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">github.com/khanhlinh616/VLM_N1</a></div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">Jupyter Notebook Thực hành</div>
+                    <div class="step-desc">notebook/vlm_demo.ipynb (Tương thích Google Colab 1x T4 GPU)</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">Tài liệu Nghiên cứu Toàn văn</div>
+                    <div class="step-desc">docs/VLM.md & README.md (Báo cáo học thuật 600+ dòng)</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-title">Tệp Trực quan hóa Pipeline</div>
+                    <div class="step-desc">data/patch_extraction_pipeline.png (Sơ đồ 3 Panels chuẩn hóa)</div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">VISION-LANGUAGE MODELS (VLM) &bull; ACADEMIC RESEARCH DECK</div>
+                <div class="footer-center">DÙNG PHÍM [◄] [►] HOẶC [SPACE] ĐỂ ĐỔI SLIDE &bull; [F] TOÀN MÀN HÌNH</div>
+                <div class="footer-right">SLIDE 24 / 24</div>
+            </div>
+        </div>
+        
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div id="nav-controls">
+        <button class="nav-btn" id="btn-prev" title="Slide trước (Phím ◄)">[ PREV ]</button>
+        <button class="nav-btn" id="btn-counter" style="cursor: default; opacity: 0.9;">01 / 24</button>
+        <button class="nav-btn" id="btn-next" title="Slide tiếp theo (Phím ►)">[ NEXT ]</button>
+        <button class="nav-btn" id="btn-fs" title="Toàn màn hình (Phím F)">[ FULLSCREEN ]</button>
+    </div>
+
+    <script>
+        (function() {
+            const slides = document.querySelectorAll('.slide-wrapper');
+            const totalSlides = slides.length;
+            let currentSlide = 0;
+
+            const progressBar = document.getElementById('progress-bar');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnCounter = document.getElementById('btn-counter');
+            const btnFs = document.getElementById('btn-fs');
+            const viewport = document.getElementById('viewport');
+
+            // Responsive Scaling for 16:9 Viewport
+            function resizeViewport() {
+                const targetWidth = 1600;
+                const targetHeight = 900;
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+
+                const scaleX = windowWidth / targetWidth;
+                const scaleY = windowHeight / targetHeight;
+                const scale = Math.min(scaleX, scaleY) * 0.96; // 96% of available area
+
+                viewport.style.transform = `scale(${scale})`;
+            }
+
+            window.addEventListener('resize', resizeViewport);
+            window.addEventListener('DOMContentLoaded', resizeViewport);
+            resizeViewport();
+
+            function showSlide(index) {
+                if (index < 0) index = 0;
+                if (index >= totalSlides) index = totalSlides - 1;
+
+                slides.forEach((s, idx) => {
+                    if (idx === index) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+
+                currentSlide = index;
+                const progressPct = ((index + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPct}%`;
+
+                const curStr = String(index + 1).padStart(2, '0');
+                const totStr = String(totalSlides).padStart(2, '0');
+                btnCounter.textContent = `${curStr} / ${totStr}`;
+
+                btnPrev.style.opacity = index === 0 ? '0.4' : '1.0';
+                btnNext.style.opacity = index === totalSlides - 1 ? '0.4' : '1.0';
+            }
+
+            function nextSlide() {
+                if (currentSlide < totalSlides - 1) {
+                    showSlide(currentSlide + 1);
+                }
+            }
+
+            function prevSlide() {
+                if (currentSlide > 0) {
+                    showSlide(currentSlide - 1);
+                }
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                }
+            }
+
+            // Event Listeners
+            btnNext.addEventListener('click', nextSlide);
+            btnPrev.addEventListener('click', prevSlide);
+            btnFs.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('keydown', (e) => {
+                switch (e.key) {
+                    case 'ArrowRight':
+                    case 'ArrowDown':
+                    case 'PageDown':
+                    case ' ':
+                        nextSlide();
+                        break;
+                    case 'ArrowLeft':
+                    case 'ArrowUp':
+                    case 'PageUp':
+                        prevSlide();
+                        break;
+                    case 'Home':
+                        showSlide(0);
+                        break;
+                    case 'End':
+                        showSlide(totalSlides - 1);
+                        break;
+                    case 'f':
+                    case 'F':
+                        toggleFullScreen();
+                        break;
+                }
+            });
+
+            showSlide(0);
+        })();
+    </script>
+</body>
+</html>

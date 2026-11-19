@@ -109,7 +109,7 @@ def test_zero_emojis_and_icons():
         if any(skip in root for skip in ['.git', '.pytest_cache', '__pycache__', '.venv', 'output']):
             continue
         for f in files:
-            if f.endswith(('.py', '.md', '.ipynb', '.txt', '.json')):
+            if f.endswith(('.py', '.md', '.ipynb', '.txt', '.json', '.html')):
                 file_path = os.path.join(root, f)
                 with open(file_path, 'r', encoding='utf-8') as fh:
                     content = fh.read()
